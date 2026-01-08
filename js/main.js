@@ -80,10 +80,6 @@ function setupEventListeners() {
     .addEventListener("click", () => openBudgetModal());
 
   document
-    .getElementById("saveOverallBudget")
-    .addEventListener("click", handleSaveOverallBudget);
-
-  document
     .getElementById("searchTransactions")
     .addEventListener("input", filterTransactions);
 

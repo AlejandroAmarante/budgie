@@ -32,7 +32,8 @@
                         <path d="M10 18v3" />
                         <path d="M14 17.75V21" />
                         <path d="M7 18a6 6 0 0 0 3.84-10.61" />
-                    </svg>Budgie</h1>
+                    </svg>Budgie
+                </h1>
                 <nav class="tab-nav">
                     <button class="tab-btn active" data-tab="dashboard">
                         <i class="ri-dashboard-line"></i> Dashboard
@@ -97,6 +98,15 @@
                             <span class="card-value" id="balance">$0.00</span>
                         </div>
                     </div>
+                    <div class="card summary-card budget-card">
+                        <div class="card-icon">
+                            <i class="ri-target-fill"></i>
+                        </div>
+                        <div class="card-content budget">
+                            <span class="card-label">Monthly Budget</span>
+                            <span class="card-value" id="budget">$0.00</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="budgetWarnings" class="warnings-container"></div>
@@ -149,9 +159,6 @@
                     <div class="budget-input-group">
                         <input type="number" id="overallBudget" placeholder="Enter overall budget" class="input"
                             step="0.01" min="0">
-                        <button id="saveOverallBudget" class="btn btn-secondary">
-                            <i class="ri-save-line"></i> Save
-                        </button>
                     </div>
                 </div>
 

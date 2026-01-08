@@ -32,23 +32,24 @@ export function renderDashboard() {
   const balance = totalIncome - totalExpenses;
 
   // Update labels based on whether we're viewing future or current/past
-  const incomeLabel = document.querySelector(".card-content.income .card-label");
+  const incomeLabel = document.querySelector(
+    ".card-content.income .card-label"
+  );
   const expensesLabel = document.querySelector(
     ".card-content.expense .card-label"
   );
-  const balanceLabel = document.querySelector(".card-content.balance .card-label");
-  const balanceCard = document.querySelector(".card-content.balance");
+  const balanceLabel = document.querySelector(
+    ".card-content.balance .card-label"
+  );
 
   if (isFuture) {
     incomeLabel.textContent = "Projected Income";
     expensesLabel.textContent = "Projected Expenses";
     balanceLabel.textContent = "Projected Balance";
-    balanceCard.style.opacity = "0.5";
   } else {
     incomeLabel.textContent = "Total Income";
     expensesLabel.textContent = "Total Expenses";
     balanceLabel.textContent = "Balance";
-    balanceCard.style.opacity = "1";
   }
 
   document.getElementById("totalIncome").textContent =
@@ -56,6 +57,11 @@ export function renderDashboard() {
   document.getElementById("totalExpenses").textContent =
     formatCurrency(totalExpenses);
   document.getElementById("balance").textContent = formatCurrency(balance);
+
+  // Update budget display
+  document.getElementById("budget").textContent = state.overallBudget
+    ? formatCurrency(state.overallBudget)
+    : "$0.00";
 
   // Filter out projected transactions for budget warnings (only warn on actual spending)
   const actualTransactions = monthTransactions.filter((t) => !t.isProjected);

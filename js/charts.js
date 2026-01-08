@@ -124,11 +124,21 @@ export function renderTrendChart() {
     d.projectedIncome,
     d.projectedExpenses,
   ]);
+
+  // Include budget in max calculation if it exists
+  if (state.overallBudget) {
+    allValues.push(state.overallBudget);
+  }
+
   const maxValue = Math.max(...allValues, 0);
   const suggestedMax = maxValue > 0 ? maxValue * 1.25 : 100;
 
   // Get the last actual data point index to connect the lines
-  const lastActualIndex = monthsData.findIndex((d) => d.isFuture) - 1;
+  let lastActualIndex = monthsData.findIndex((d) => d.isFuture) - 1;
+
+  // If all months are in the future, there's no actual data to connect from
+  const hasActualData = lastActualIndex >= 0;
+
   const hasFutureData = monthsData.some(
     (d) => d.isFuture && (d.projectedIncome > 0 || d.projectedExpenses > 0)
   );
@@ -137,41 +147,49 @@ export function renderTrendChart() {
   const datasets = [];
 
   // First add projected datasets (bottom layer) if they exist
-  if (hasFutureData && lastActualIndex >= 0) {
+  if (hasFutureData) {
     datasets.push({
       label: "Projected Expenses",
       data: monthsData.map((d, idx) => {
-        if (idx === lastActualIndex) return d.actualExpenses; // Connection point
+        // If we have actual data, connect from the last actual month
+        if (hasActualData && idx === lastActualIndex) return d.actualExpenses;
+        // Show projected expenses for future months
         return d.isFuture ? d.actualExpenses + d.projectedExpenses : null;
       }),
       borderColor: "rgb(239, 68, 68)",
-      backgroundColor: "rgba(239, 68, 68, 0.2)",
+      backgroundColor: "rgb(239, 68, 68)",
       borderDash: [5, 5],
       borderWidth: 2,
       tension: 0.4,
-      fill: "origin",
+      fill: false,
       spanGaps: true,
       order: 2,
-      pointRadius: 4,
-      pointHoverRadius: 6,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      pointBackgroundColor: "rgb(239, 68, 68)",
+      pointBorderColor: "rgb(239, 68, 68)",
     });
 
     datasets.push({
       label: "Projected Income",
       data: monthsData.map((d, idx) => {
-        if (idx === lastActualIndex) return d.actualIncome; // Connection point
+        // If we have actual data, connect from the last actual month
+        if (hasActualData && idx === lastActualIndex) return d.actualIncome;
+        // Show projected income for future months
         return d.isFuture ? d.actualIncome + d.projectedIncome : null;
       }),
       borderColor: "rgb(16, 185, 129)",
-      backgroundColor: "rgba(16, 185, 129, 0.2)",
+      backgroundColor: "rgb(16, 185, 129)",
       borderDash: [5, 5],
       borderWidth: 2,
       tension: 0.4,
-      fill: "-1", // Fill to previous dataset
+      fill: false,
       spanGaps: true,
       order: 1,
-      pointRadius: 4,
-      pointHoverRadius: 6,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      pointBackgroundColor: "rgb(16, 185, 129)",
+      pointBorderColor: "rgb(16, 185, 129)",
     });
   }
 
@@ -180,29 +198,50 @@ export function renderTrendChart() {
     label: "Expenses",
     data: monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
     borderColor: "rgb(239, 68, 68)",
-    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    backgroundColor: "rgb(239, 68, 68)",
     borderWidth: 2,
     tension: 0.4,
-    fill: "origin",
+    fill: false,
     spanGaps: false,
     order: 4,
-    pointRadius: 4,
-    pointHoverRadius: 6,
+    pointRadius: 5,
+    pointHoverRadius: 7,
+    pointBackgroundColor: "rgb(239, 68, 68)",
+    pointBorderColor: "rgb(239, 68, 68)",
   });
 
   datasets.push({
     label: "Income",
     data: monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
     borderColor: "rgb(16, 185, 129)",
-    backgroundColor: "rgba(16, 185, 129, 0.2)",
+    backgroundColor: "rgb(16, 185, 129)",
     borderWidth: 2,
     tension: 0.4,
-    fill: "-1", // Fill to previous dataset
+    fill: false,
     spanGaps: false,
     order: 3,
-    pointRadius: 4,
-    pointHoverRadius: 6,
+    pointRadius: 5,
+    pointHoverRadius: 7,
+    pointBackgroundColor: "rgb(16, 185, 129)",
+    pointBorderColor: "rgb(16, 185, 129)",
   });
+
+  // Add budget line if overall budget is set
+  if (state.overallBudget) {
+    datasets.push({
+      label: "Monthly Budget",
+      data: monthsData.map(() => state.overallBudget),
+      borderColor: "rgb(251, 146, 60)",
+      backgroundColor: "transparent",
+      borderDash: [10, 5],
+      borderWidth: 2.5,
+      tension: 0,
+      fill: false,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      order: 0,
+    });
+  }
 
   charts.trend = new Chart(ctx, {
     type: "line",
@@ -239,23 +278,19 @@ export function renderTrendChart() {
             generateLabels: (chart) => {
               const original =
                 Chart.defaults.plugins.legend.labels.generateLabels(chart);
-              // Reorder legend to match visual order: Income, Expenses, Projected Income, Projected Expenses
-              const order = [
-                "Income",
-                "Expenses",
-                "Projected Income",
-                "Projected Expenses",
-              ];
+              // Filter out projected datasets and reorder remaining
+              const order = ["Income", "Expenses", "Monthly Budget"];
               return original
+                .filter((label) => !label.text.includes("Projected"))
                 .sort((a, b) => {
                   const aIndex = order.indexOf(a.text);
                   const bIndex = order.indexOf(b.text);
                   return aIndex - bIndex;
                 })
                 .map((label) => {
-                  // Add dashed line indicator for projected datasets
-                  if (label.text.includes("Projected")) {
-                    label.lineDash = [5, 5];
+                  // Add dashed line indicator for budget
+                  if (label.text === "Monthly Budget") {
+                    label.lineDash = [10, 5];
                   }
                   return label;
                 });
@@ -264,6 +299,20 @@ export function renderTrendChart() {
         },
         filler: {
           propagate: false,
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              let label = context.dataset.label || "";
+              if (label) {
+                label += ": ";
+              }
+              if (context.parsed.y !== null) {
+                label += formatCurrency(context.parsed.y);
+              }
+              return label;
+            },
+          },
         },
       },
       scales: {

@@ -21,6 +21,26 @@ export function renderBudgets() {
   const overallBudgetInput = document.getElementById("overallBudget");
   overallBudgetInput.value = state.overallBudget || "";
 
+  // Add event listener for auto-save on input
+  const newOverallBudgetInput = overallBudgetInput.cloneNode(true);
+  overallBudgetInput.parentNode.replaceChild(
+    newOverallBudgetInput,
+    overallBudgetInput
+  );
+
+  newOverallBudgetInput.addEventListener("input", (e) => {
+    const value = e.target.value;
+    if (value === "" || (parseFloat(value) > 0 && !isNaN(parseFloat(value)))) {
+      state.overallBudget = value ? parseFloat(value) : null;
+      saveToStorage();
+      // Update dashboard if we're on that tab
+      if (state.currentTab === "dashboard") {
+        const event = new CustomEvent("budgetUpdated");
+        document.dispatchEvent(event);
+      }
+    }
+  });
+
   const container = document.getElementById("budgetsList");
 
   if (state.budgets.length === 0) {
@@ -47,7 +67,10 @@ export function renderBudgets() {
       return `
         <div class="budget-item">
           <div class="budget-header">
-            <div class="budget-title">${escapeHtml(budget.category)}</div>
+            <div class="budget-title">
+              <i class="${budget.icon || "ri-folder-line"}"></i>
+              ${escapeHtml(budget.category)}
+            </div>
             <div class="budget-amount">${formatCurrency(budget.amount)}</div>
           </div>
           <div class="budget-progress">
@@ -86,7 +109,7 @@ export function renderBudgets() {
 }
 
 export function saveBudget(budgetId, formData) {
-  const { category, amount } = formData;
+  const { category, amount, icon } = formData;
 
   if (!category || !amount || amount <= 0) {
     alert("Please fill in all required fields");
@@ -108,6 +131,7 @@ export function saveBudget(budgetId, formData) {
         ...state.budgets[index],
         category,
         amount,
+        icon: icon || "ri-folder-line",
       };
     }
   } else {
@@ -115,6 +139,7 @@ export function saveBudget(budgetId, formData) {
       id: generateId(),
       category,
       amount,
+      icon: icon || "ri-folder-line",
     });
   }
 
@@ -151,4 +176,8 @@ export function saveOverallBudget(value) {
 
 export function getBudget(id) {
   return state.budgets.find((b) => b.id === id);
+}
+
+export function getBudgetByCategory(category) {
+  return state.budgets.find((b) => b.category === category);
 }
