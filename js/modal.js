@@ -1,6 +1,12 @@
 // modal.js - Modal Management Module
 import { state, updateCategoriesSet } from "./state.js";
-import { importJSON, resetData, exportJSON, exportCSV } from "./storage.js";
+import {
+  importJSON,
+  resetData,
+  exportJSON,
+  exportCSV,
+  saveToStorage,
+} from "./storage.js";
 import { escapeHtml, updateFilterCategories } from "./ui.js";
 import {
   saveTransaction,
