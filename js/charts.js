@@ -157,7 +157,7 @@ export function renderTrendChart() {
         return d.isFuture ? d.actualExpenses + d.projectedExpenses : null;
       }),
       borderColor: "rgb(239, 68, 68)",
-      backgroundColor: "rgb(239, 68, 68)",
+      backgroundColor: "transparent",
       borderDash: [5, 5],
       borderWidth: 2,
       tension: 0.4,
@@ -166,8 +166,9 @@ export function renderTrendChart() {
       order: 2,
       pointRadius: 5,
       pointHoverRadius: 7,
-      pointBackgroundColor: "rgb(239, 68, 68)",
+      pointBackgroundColor: "transparent",
       pointBorderColor: "rgb(239, 68, 68)",
+      pointBorderWidth: 2,
     });
 
     datasets.push({
@@ -179,7 +180,7 @@ export function renderTrendChart() {
         return d.isFuture ? d.actualIncome + d.projectedIncome : null;
       }),
       borderColor: "rgb(16, 185, 129)",
-      backgroundColor: "rgb(16, 185, 129)",
+      backgroundColor: "transparent",
       borderDash: [5, 5],
       borderWidth: 2,
       tension: 0.4,
@@ -188,8 +189,9 @@ export function renderTrendChart() {
       order: 1,
       pointRadius: 5,
       pointHoverRadius: 7,
-      pointBackgroundColor: "rgb(16, 185, 129)",
+      pointBackgroundColor: "transparent",
       pointBorderColor: "rgb(16, 185, 129)",
+      pointBorderWidth: 2,
     });
   }
 
