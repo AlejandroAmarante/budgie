@@ -4,6 +4,7 @@ import {
   updateCategoriesSet,
   generateId,
   getTransactionsForMonth,
+  calculateOverallBudget,
 } from "./state.js";
 import { saveToStorage } from "./storage.js";
 import { formatCurrency, escapeHtml, updateFilterCategories } from "./ui.js";
@@ -18,28 +19,10 @@ export function renderBudgets() {
       (categoryExpenses[t.category] || 0) + t.amount;
   });
 
-  const overallBudgetInput = document.getElementById("overallBudget");
-  overallBudgetInput.value = state.overallBudget || "";
-
-  // Add event listener for auto-save on input
-  const newOverallBudgetInput = overallBudgetInput.cloneNode(true);
-  overallBudgetInput.parentNode.replaceChild(
-    newOverallBudgetInput,
-    overallBudgetInput
-  );
-
-  newOverallBudgetInput.addEventListener("input", (e) => {
-    const value = e.target.value;
-    if (value === "" || (parseFloat(value) > 0 && !isNaN(parseFloat(value)))) {
-      state.overallBudget = value ? parseFloat(value) : null;
-      saveToStorage();
-      // Update dashboard if we're on that tab
-      if (state.currentTab === "dashboard") {
-        const event = new CustomEvent("budgetUpdated");
-        document.dispatchEvent(event);
-      }
-    }
-  });
+  // Update overall budget display
+  const overallBudget = calculateOverallBudget();
+  const overallBudgetDisplay = document.getElementById("overallBudgetDisplay");
+  overallBudgetDisplay.textContent = formatCurrency(overallBudget);
 
   const container = document.getElementById("budgetsList");
 
@@ -146,6 +129,13 @@ export function saveBudget(budgetId, formData) {
   saveToStorage();
   updateCategoriesSet();
   updateFilterCategories();
+
+  // Update dashboard if needed
+  if (state.currentTab === "dashboard") {
+    const event = new CustomEvent("budgetUpdated");
+    document.dispatchEvent(event);
+  }
+
   return true;
 }
 
@@ -156,21 +146,13 @@ export function deleteBudget(id) {
 
   state.budgets = state.budgets.filter((b) => b.id !== id);
   saveToStorage();
-  return true;
-}
 
-export function saveOverallBudget(value) {
-  state.overallBudget = value ? parseFloat(value) : null;
-
-  if (
-    state.overallBudget !== null &&
-    (isNaN(state.overallBudget) || state.overallBudget <= 0)
-  ) {
-    alert("Please enter a valid budget amount");
-    return false;
+  // Update dashboard if needed
+  if (state.currentTab === "dashboard") {
+    const event = new CustomEvent("budgetUpdated");
+    document.dispatchEvent(event);
   }
 
-  saveToStorage();
   return true;
 }
 

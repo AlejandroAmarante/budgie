@@ -1,5 +1,9 @@
 // dashboard.js - Dashboard Rendering Module
-import { state, getTransactionsForMonth } from "./state.js";
+import {
+  state,
+  getTransactionsForMonth,
+  calculateOverallBudget,
+} from "./state.js";
 import { formatCurrency, escapeHtml } from "./ui.js";
 import { renderCategoryChart, renderTrendChart } from "./charts.js";
 
@@ -58,10 +62,9 @@ export function renderDashboard() {
     formatCurrency(totalExpenses);
   document.getElementById("balance").textContent = formatCurrency(balance);
 
-  // Update budget display
-  document.getElementById("budget").textContent = state.overallBudget
-    ? formatCurrency(state.overallBudget)
-    : "$0.00";
+  // Update budget display with calculated total
+  const overallBudget = calculateOverallBudget();
+  document.getElementById("budget").textContent = formatCurrency(overallBudget);
 
   // Filter out projected transactions for budget warnings (only warn on actual spending)
   const actualTransactions = monthTransactions.filter((t) => !t.isProjected);
@@ -85,11 +88,12 @@ function renderBudgetWarnings(monthTransactions) {
   const expenses = monthTransactions.filter((t) => t.type === "expense");
   const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
 
-  if (state.overallBudget && totalExpenses > state.overallBudget) {
+  const overallBudget = calculateOverallBudget();
+  if (overallBudget > 0 && totalExpenses > overallBudget) {
     const warning = createWarningElement(
       "Overall Budget Exceeded",
       `You've spent ${formatCurrency(totalExpenses)} of your ${formatCurrency(
-        state.overallBudget
+        overallBudget
       )} budget.`
     );
     container.appendChild(warning);

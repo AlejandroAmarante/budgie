@@ -20,7 +20,6 @@ import {
   editBudget,
   handleDeleteBudget,
   handleResetData,
-  handleSaveOverallBudget,
 } from "./modal.js";
 
 function initApp() {

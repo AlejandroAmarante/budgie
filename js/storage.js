@@ -1,7 +1,7 @@
 // storage.js - Storage Management Module
 import { state } from "./state.js";
 
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2; // Incremented version for migration
 const STORAGE_KEY = "budgetAppData";
 
 export function loadFromStorage() {
@@ -16,15 +16,14 @@ export function loadFromStorage() {
       } else {
         state.transactions = data.transactions || [];
         state.budgets = data.budgets || [];
-        state.overallBudget = data.overallBudget || null;
         state.darkMode = data.darkMode || false;
+        // No longer loading overallBudget as it's now calculated
       }
     }
   } catch (e) {
     console.error("Failed to load data:", e);
     state.transactions = [];
     state.budgets = [];
-    state.overallBudget = null;
     state.darkMode = false;
   }
 }
@@ -32,8 +31,10 @@ export function loadFromStorage() {
 function migrateData(data) {
   state.transactions = data.transactions || [];
   state.budgets = data.budgets || [];
-  state.overallBudget = data.overallBudget || null;
   state.darkMode = data.darkMode || false;
+  // Migration: Remove overallBudget as it's now calculated from individual budgets
+  // If user had an overallBudget but no individual budgets, we can't migrate it
+  // This is acceptable as the new system is more granular
   saveToStorage();
 }
 
@@ -43,8 +44,8 @@ export function saveToStorage() {
       version: STORAGE_VERSION,
       transactions: state.transactions,
       budgets: state.budgets,
-      overallBudget: state.overallBudget,
       darkMode: state.darkMode,
+      // No longer saving overallBudget as it's calculated
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -58,7 +59,6 @@ export function exportJSON() {
     version: STORAGE_VERSION,
     transactions: state.transactions,
     budgets: state.budgets,
-    overallBudget: state.overallBudget,
     exportDate: new Date().toISOString(),
   };
 
@@ -106,10 +106,6 @@ function generateBudgetsCSV() {
   const headers = ["Category", "Amount"];
   const rows = state.budgets.map((b) => [escapeCSV(b.category), b.amount]);
 
-  if (state.overallBudget) {
-    rows.push(["Overall Budget", state.overallBudget]);
-  }
-
   return [headers, ...rows].map((row) => row.join(",")).join("\n");
 }
 
@@ -134,7 +130,6 @@ export function importJSON(file) {
 
         state.transactions = data.transactions;
         state.budgets = data.budgets || [];
-        state.overallBudget = data.overallBudget || null;
 
         saveToStorage();
         resolve();
@@ -149,7 +144,6 @@ export function importJSON(file) {
 export function resetData() {
   state.transactions = [];
   state.budgets = [];
-  state.overallBudget = null;
   state.categories.clear();
   saveToStorage();
 }

@@ -24,7 +24,7 @@
             <div class="header-content">
                 <h1>
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        stroke="#5ccb30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                         class="lucide lucide-bird-icon lucide-bird">
                         <path d="M16 7h.01" />
                         <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
@@ -70,6 +70,8 @@
                     </button>
                 </div>
 
+                <div id="budgetWarnings" class="warnings-container"></div>
+
                 <div class="summary-cards">
                     <div class="card summary-card income-card">
                         <div class="card-icon">
@@ -109,7 +111,7 @@
                     </div>
                 </div>
 
-                <div id="budgetWarnings" class="warnings-container"></div>
+
 
                 <div class="charts-container">
                     <div class="card chart-card">
@@ -156,9 +158,9 @@
 
                 <div class="card">
                     <h3><i class="ri-calendar-line"></i> Overall Monthly Budget</h3>
-                    <div class="budget-input-group">
-                        <input type="number" id="overallBudget" placeholder="Enter overall budget" class="input"
-                            step="0.01" min="0">
+                    <div class="budget-summary">
+                        <span class="budget-summary-label">Total from all budgets:</span>
+                        <span class="budget-summary-value" id="overallBudgetDisplay">$0.00</span>
                     </div>
                 </div>
 

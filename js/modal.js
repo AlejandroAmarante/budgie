@@ -18,7 +18,6 @@ import {
   saveBudget,
   getBudget,
   deleteBudget,
-  saveOverallBudget,
   renderBudgets,
 } from "./budgets.js";
 import { renderDashboard } from "./dashboard.js";
@@ -470,18 +469,18 @@ export function handleResetData() {
   renderBudgets();
 }
 
-export function handleSaveOverallBudget() {
-  const value = document.getElementById("overallBudget").value;
-  const success = saveOverallBudget(value);
+// export function handleSaveOverallBudget() {
+//   const value = document.getElementById("overallBudget").value;
+//   const success = saveOverallBudget(value);
 
-  if (success) {
-    if (state.currentTab === "dashboard") {
-      renderDashboard();
-    } else if (state.currentTab === "budgets") {
-      renderBudgets();
-    }
-  }
-}
+//   if (success) {
+//     if (state.currentTab === "dashboard") {
+//       renderDashboard();
+//     } else if (state.currentTab === "budgets") {
+//       renderBudgets();
+//     }
+//   }
+// }
 
 // Public API functions
 export function editTransaction(id) {

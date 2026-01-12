@@ -1,5 +1,9 @@
 // charts.js - Chart Rendering Module
-import { state, getTransactionsForMonth } from "./state.js";
+import {
+  state,
+  getTransactionsForMonth,
+  calculateOverallBudget,
+} from "./state.js";
 import { formatCurrency, generateColors } from "./ui.js";
 
 const charts = {
@@ -117,6 +121,9 @@ export function renderTrendChart() {
     charts.trend.destroy();
   }
 
+  // Get calculated overall budget
+  const overallBudget = calculateOverallBudget();
+
   // Calculate max value and add 25% breathing room
   const allValues = monthsData.flatMap((d) => [
     d.actualIncome,
@@ -126,8 +133,8 @@ export function renderTrendChart() {
   ]);
 
   // Include budget in max calculation if it exists
-  if (state.overallBudget) {
-    allValues.push(state.overallBudget);
+  if (overallBudget > 0) {
+    allValues.push(overallBudget);
   }
 
   const maxValue = Math.max(...allValues, 0);
@@ -229,11 +236,11 @@ export function renderTrendChart() {
   });
 
   // Add budget line if overall budget is set
-  if (state.overallBudget) {
+  if (overallBudget > 0) {
     datasets.push({
       label: "Monthly Budget",
-      data: monthsData.map(() => state.overallBudget),
-      borderColor: "rgb(251, 146, 60)",
+      data: monthsData.map(() => overallBudget),
+      borderColor: "#0572ff",
       backgroundColor: "transparent",
       borderDash: [10, 5],
       borderWidth: 2.5,
