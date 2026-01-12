@@ -29,11 +29,8 @@ export function renderBudgets() {
   if (state.budgets.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <i class="ri-pie-chart-line"></i>
+        <i class="ri-file-unknow-line"></i>
         <p>No budgets set</p>
-        <button class="btn btn-primary" onclick="window.budgetApp.openBudgetModal()">
-          <i class="ri-add-line"></i> Add Budget
-        </button>
       </div>
     `;
     return;

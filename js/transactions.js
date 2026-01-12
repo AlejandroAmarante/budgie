@@ -39,11 +39,8 @@ export function filterTransactions() {
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <i class="ri-inbox-line"></i>
+        <i class="ri-file-unknow-line"></i>
         <p>No transactions found</p>
-        <button class="btn btn-primary" onclick="window.budgetApp.openTransactionModal()">
-          <i class="ri-add-line"></i> Add Transaction
-        </button>
       </div>
     `;
     return;
