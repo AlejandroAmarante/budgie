@@ -36,9 +36,9 @@
   --warning: #fbbf24;
 
   /* Backgrounds — very dark, neutral charcoal */
-  --bg-primary: #0a0a0b; /* almost black */
+  --bg-primary: #0f0f11; /* almost black */
   --bg-secondary: #141416; /* subtle lift */
-  --bg-tertiary: #1c1c1f; /* card/surface background */
+  --bg-tertiary: #141416; /* card/surface background */
 
   /* Text */
   --text-primary: #f1f5f9;
