@@ -185,6 +185,14 @@ body {
   text-align: center;
 }
 
+.month-selector .icon-btn {
+  transform: scale(1.25);
+}
+
+.month-selector .icon-btn:hover {
+  transform: scale(1.5);
+}
+
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
