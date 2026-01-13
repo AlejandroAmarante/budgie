@@ -13,6 +13,7 @@ const charts = {
 
 export function renderCategoryChart(monthTransactions) {
   const ctx = document.getElementById("categoryChart");
+  const container = ctx.parentElement;
 
   // Include both actual and projected expenses
   const expenses = monthTransactions.filter((t) => t.type === "expense");
@@ -27,6 +28,39 @@ export function renderCategoryChart(monthTransactions) {
 
   if (charts.category) {
     charts.category.destroy();
+  }
+
+  // Check if there are any expenses at all across all time
+  const hasAnyExpenses = state.transactions.some((t) => t.type === "expense");
+
+  if (!hasAnyExpenses) {
+    ctx.style.display = "none";
+    let emptyMessage = container.querySelector(".chart-empty-state");
+    if (!emptyMessage) {
+      emptyMessage = document.createElement("div");
+      emptyMessage.className = "chart-empty-state";
+      emptyMessage.innerHTML = `
+        <i class="ri-pie-chart-line"></i>
+        <p>No expenses found. Add expenses in the <button class="link-btn" id="goToTransactions">Transactions</button> tab</p>
+      `;
+      container.appendChild(emptyMessage);
+
+      // Add click handler
+      emptyMessage
+        .querySelector("#goToTransactions")
+        .addEventListener("click", () => {
+          document.querySelector('[data-tab="transactions"]').click();
+        });
+    }
+    emptyMessage.style.display = "flex";
+    return;
+  }
+
+  // Hide empty message and show canvas
+  ctx.style.display = "block";
+  const emptyMessage = container.querySelector(".chart-empty-state");
+  if (emptyMessage) {
+    emptyMessage.style.display = "none";
   }
 
   if (labels.length === 0) {
@@ -73,8 +107,13 @@ export function renderTrendChart() {
     now.getMonth() + 1
   ).padStart(2, "0")}`;
 
+  // Check if there are any transactions at all
+  const hasAnyTransactions = state.transactions.length > 0;
+
   const monthsData = [];
-  for (let i = 5; i >= 0; i--) {
+
+  // Center the current month in the chart (show 2 months before, current, 3 months after)
+  for (let i = 2; i >= -3; i--) {
     const date = new Date(state.currentMonth);
     date.setMonth(date.getMonth() - i);
     const monthStr = date.toLocaleDateString("en-US", {
@@ -153,87 +192,90 @@ export function renderTrendChart() {
   // Prepare datasets - order matters for proper layering (bottom to top)
   const datasets = [];
 
-  // First add projected datasets (bottom layer) if they exist
-  if (hasFutureData) {
+  // Only add data lines if there are any transactions
+  if (hasAnyTransactions) {
+    // First add projected datasets (bottom layer) if they exist
+    if (hasFutureData) {
+      datasets.push({
+        label: "Projected Expenses",
+        data: monthsData.map((d, idx) => {
+          // If we have actual data, connect from the last actual month
+          if (hasActualData && idx === lastActualIndex) return d.actualExpenses;
+          // Show projected expenses for future months
+          return d.isFuture ? d.actualExpenses + d.projectedExpenses : null;
+        }),
+        borderColor: "rgb(239, 68, 68)",
+        backgroundColor: "transparent",
+        borderDash: [5, 5],
+        borderWidth: 2,
+        tension: 0.4,
+        fill: false,
+        spanGaps: true,
+        order: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: "transparent",
+        pointBorderColor: "rgb(239, 68, 68)",
+        pointBorderWidth: 2,
+      });
+
+      datasets.push({
+        label: "Projected Income",
+        data: monthsData.map((d, idx) => {
+          // If we have actual data, connect from the last actual month
+          if (hasActualData && idx === lastActualIndex) return d.actualIncome;
+          // Show projected income for future months
+          return d.isFuture ? d.actualIncome + d.projectedIncome : null;
+        }),
+        borderColor: "rgb(16, 185, 129)",
+        backgroundColor: "transparent",
+        borderDash: [5, 5],
+        borderWidth: 2,
+        tension: 0.4,
+        fill: false,
+        spanGaps: true,
+        order: 1,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: "transparent",
+        pointBorderColor: "rgb(16, 185, 129)",
+        pointBorderWidth: 2,
+      });
+    }
+
+    // Then add actual datasets (top layer)
     datasets.push({
-      label: "Projected Expenses",
-      data: monthsData.map((d, idx) => {
-        // If we have actual data, connect from the last actual month
-        if (hasActualData && idx === lastActualIndex) return d.actualExpenses;
-        // Show projected expenses for future months
-        return d.isFuture ? d.actualExpenses + d.projectedExpenses : null;
-      }),
+      label: "Expenses",
+      data: monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
       borderColor: "rgb(239, 68, 68)",
-      backgroundColor: "transparent",
-      borderDash: [5, 5],
+      backgroundColor: "rgb(239, 68, 68)",
       borderWidth: 2,
       tension: 0.4,
       fill: false,
-      spanGaps: true,
-      order: 2,
+      spanGaps: false,
+      order: 4,
       pointRadius: 5,
       pointHoverRadius: 7,
-      pointBackgroundColor: "transparent",
+      pointBackgroundColor: "rgb(239, 68, 68)",
       pointBorderColor: "rgb(239, 68, 68)",
-      pointBorderWidth: 2,
     });
 
     datasets.push({
-      label: "Projected Income",
-      data: monthsData.map((d, idx) => {
-        // If we have actual data, connect from the last actual month
-        if (hasActualData && idx === lastActualIndex) return d.actualIncome;
-        // Show projected income for future months
-        return d.isFuture ? d.actualIncome + d.projectedIncome : null;
-      }),
+      label: "Income",
+      data: monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
       borderColor: "rgb(16, 185, 129)",
-      backgroundColor: "transparent",
-      borderDash: [5, 5],
+      backgroundColor: "rgb(16, 185, 129)",
       borderWidth: 2,
       tension: 0.4,
       fill: false,
-      spanGaps: true,
-      order: 1,
+      spanGaps: false,
+      order: 3,
       pointRadius: 5,
       pointHoverRadius: 7,
-      pointBackgroundColor: "transparent",
+      pointBackgroundColor: "rgb(16, 185, 129)",
       pointBorderColor: "rgb(16, 185, 129)",
-      pointBorderWidth: 2,
     });
   }
-
-  // Then add actual datasets (top layer)
-  datasets.push({
-    label: "Expenses",
-    data: monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
-    borderColor: "rgb(239, 68, 68)",
-    backgroundColor: "rgb(239, 68, 68)",
-    borderWidth: 2,
-    tension: 0.4,
-    fill: false,
-    spanGaps: false,
-    order: 4,
-    pointRadius: 5,
-    pointHoverRadius: 7,
-    pointBackgroundColor: "rgb(239, 68, 68)",
-    pointBorderColor: "rgb(239, 68, 68)",
-  });
-
-  datasets.push({
-    label: "Income",
-    data: monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
-    borderColor: "rgb(16, 185, 129)",
-    backgroundColor: "rgb(16, 185, 129)",
-    borderWidth: 2,
-    tension: 0.4,
-    fill: false,
-    spanGaps: false,
-    order: 3,
-    pointRadius: 5,
-    pointHoverRadius: 7,
-    pointBackgroundColor: "rgb(16, 185, 129)",
-    pointBorderColor: "rgb(16, 185, 129)",
-  });
 
   // Add budget line if overall budget is set
   if (overallBudget > 0) {
