@@ -68,6 +68,9 @@ export function renderCategoryChart(monthTransactions) {
     return;
   }
 
+  // Calculate total for tooltips
+  const total = data.reduce((sum, val) => sum + val, 0);
+
   charts.category = new Chart(ctx, {
     type: "pie",
     data: {
@@ -94,6 +97,16 @@ export function renderCategoryChart(monthTransactions) {
             },
           },
         },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const label = context.label || "";
+              const value = context.parsed || 0;
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+            },
+          },
+        },
       },
     },
   });
@@ -113,7 +126,7 @@ export function renderTrendChart() {
   const monthsData = [];
 
   // Center the current month in the chart (show 2 months before, current, 3 months after)
-  for (let i = 2; i >= -3; i--) {
+  for (let i = 2; i >= -2; i--) {
     const date = new Date(state.currentMonth);
     date.setMonth(date.getMonth() - i);
     const monthStr = date.toLocaleDateString("en-US", {
