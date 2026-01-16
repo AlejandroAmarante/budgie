@@ -449,7 +449,6 @@ body {
 .chart-card h3 {
   font-size: 1.125rem;
   font-weight: 600;
-  margin-bottom: 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -497,14 +496,14 @@ body {
   color: var(--primary-dark);
 }
 
-.section-header {
+/* .section-header {
   display: grid;
   grid-template-columns: 1fr auto;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
-}
+} */
 
 .section-header {
   display: grid;
@@ -591,7 +590,7 @@ body {
 }
 
 .btn-secondary {
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-secondary);
   color: var(--text-primary);
 }
 
@@ -618,8 +617,8 @@ body {
   font-size: 1.5rem;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 6px;
+  padding: 0.6rem 0.7rem;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -627,8 +626,41 @@ body {
 }
 
 .icon-btn:hover {
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-secondary);
   color: var(--text-primary);
+}
+
+.chart-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  margin-bottom: 1rem;
+}
+
+/* Chart type toggle */
+.chart-type-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+  grid-column: 3;
+}
+
+.chart-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  grid-column: 2;
+}
+
+.chart-type-btn {
+  transition: all 0.2s ease;
+}
+
+.chart-type-btn.active {
+  color: var(--primary);
+}
+
+.chart-type-btn.active:hover {
+  background-color: var(--primary-hover);
 }
 
 .transactions-list {
@@ -854,16 +886,24 @@ body {
 }
 
 .modal-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 1.5rem;
   border-bottom: 1px solid var(--border);
 }
 
 .modal-header h3 {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 600;
+  justify-self: center;
+  grid-column: 2;
+}
+
+.close-modal {
+  justify-self: end;
+  cursor: pointer;
+  grid-column: 3;
 }
 
 .modal-body {

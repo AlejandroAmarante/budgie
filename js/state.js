@@ -6,6 +6,8 @@ export const state = {
   currentMonth: new Date(),
   currentTab: "dashboard",
   categories: new Set(),
+  chartType: "pie", // For category chart (pie/doughnut)
+  trendChartType: "line", // For trend chart (line/bar)
 };
 
 export function updateCategoriesSet() {

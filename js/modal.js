@@ -399,7 +399,7 @@ export function openSettings() {
       <div class="settings-actions">
         <input type="file" id="importFile" accept=".json" style="display: none;">
         <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">
-          <i class="ri-upload-line"></i> Import from JSON
+          <i class="ri-file-upload-line"></i> Import from JSON
         </button>
       </div>
     </div>
@@ -415,7 +415,6 @@ export function openSettings() {
       </div>
     </div>
     <div class="settings-section">
-      <h4><i class="ri-delete-bin-line"></i> Reset Data</h4>
       <div class="settings-actions">
         <button class="btn btn-danger" onclick="window.budgetApp.resetData()">
           <i class="ri-delete-bin-line"></i> Reset All Data

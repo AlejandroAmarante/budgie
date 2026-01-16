@@ -1,23 +1,22 @@
 // storage.js - Storage Management Module
 import { state } from "./state.js";
 
-const STORAGE_VERSION = 2; // Incremented version for migration
+const STORAGE_VERSION = 3; // Incremented version for new trendChartType
 const STORAGE_KEY = "budgetAppData";
 
 export function loadFromStorage() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-
     if (stored) {
       const data = JSON.parse(stored);
-
       if (data.version !== STORAGE_VERSION) {
         migrateData(data);
       } else {
         state.transactions = data.transactions || [];
         state.budgets = data.budgets || [];
         state.darkMode = data.darkMode || false;
-        // No longer loading overallBudget as it's now calculated
+        state.chartType = data.chartType || "pie";
+        state.trendChartType = data.trendChartType || "line";
       }
     }
   } catch (e) {
@@ -25,6 +24,8 @@ export function loadFromStorage() {
     state.transactions = [];
     state.budgets = [];
     state.darkMode = false;
+    state.chartType = "pie";
+    state.trendChartType = "line";
   }
 }
 
@@ -32,9 +33,8 @@ function migrateData(data) {
   state.transactions = data.transactions || [];
   state.budgets = data.budgets || [];
   state.darkMode = data.darkMode || false;
-  // Migration: Remove overallBudget as it's now calculated from individual budgets
-  // If user had an overallBudget but no individual budgets, we can't migrate it
-  // This is acceptable as the new system is more granular
+  state.chartType = data.chartType || "pie";
+  state.trendChartType = data.trendChartType || "line";
   saveToStorage();
 }
 
@@ -45,9 +45,9 @@ export function saveToStorage() {
       transactions: state.transactions,
       budgets: state.budgets,
       darkMode: state.darkMode,
-      // No longer saving overallBudget as it's calculated
+      chartType: state.chartType,
+      trendChartType: state.trendChartType,
     };
-
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
     console.error("Failed to save data:", e);
@@ -61,7 +61,6 @@ export function exportJSON() {
     budgets: state.budgets,
     exportDate: new Date().toISOString(),
   };
-
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
   });
@@ -76,9 +75,7 @@ export function exportJSON() {
 export function exportCSV() {
   const transactionsCSV = generateTransactionsCSV();
   const budgetsCSV = generateBudgetsCSV();
-
   const csv = `TRANSACTIONS\n${transactionsCSV}\n\nBUDGETS\n${budgetsCSV}`;
-
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -98,14 +95,12 @@ function generateTransactionsCSV() {
     escapeCSV(t.notes || ""),
     t.recurring ? "Yes" : "No",
   ]);
-
   return [headers, ...rows].map((row) => row.join(",")).join("\n");
 }
 
 function generateBudgetsCSV() {
   const headers = ["Category", "Amount"];
   const rows = state.budgets.map((b) => [escapeCSV(b.category), b.amount]);
-
   return [headers, ...rows].map((row) => row.join(",")).join("\n");
 }
 
@@ -123,14 +118,11 @@ export function importJSON(file) {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result);
-
         if (!data.transactions || !Array.isArray(data.transactions)) {
           throw new Error("Invalid data format");
         }
-
         state.transactions = data.transactions;
         state.budgets = data.budgets || [];
-
         saveToStorage();
         resolve();
       } catch (error) {

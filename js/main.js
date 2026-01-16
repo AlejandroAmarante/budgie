@@ -22,6 +22,7 @@ import {
   handleResetData,
 } from "./modal.js";
 import { setupMobileNavigation, setupMobileActions } from "./navigation.js";
+import { initPieChartToggle, initTrendChartToggle } from "./charts.js";
 
 function initApp() {
   loadFromStorage();
@@ -39,10 +40,16 @@ function initApp() {
   renderTransactions();
   renderBudgets();
   updateFilterCategories();
+
+  // Initialize chart type toggle buttons
+  initPieChartToggle();
+  initTrendChartToggle();
+
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
 }
+
 function setupEventListeners() {
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -67,28 +74,37 @@ function setupEventListeners() {
   document
     .getElementById("settingsBtn")
     .addEventListener("click", openSettings);
+
   document
     .getElementById("prevMonth")
     .addEventListener("click", () => changeMonth(-1));
+
   document
     .getElementById("nextMonth")
     .addEventListener("click", () => changeMonth(1));
+
   document
     .getElementById("addTransactionBtn")
     .addEventListener("click", () => openTransactionModal());
+
   document
     .getElementById("addBudgetBtn")
     .addEventListener("click", () => openBudgetModal());
+
   document
     .getElementById("searchTransactions")
     .addEventListener("input", filterTransactions);
+
   document
     .getElementById("filterType")
     .addEventListener("change", filterTransactions);
+
   document
     .getElementById("filterCategory")
     .addEventListener("change", filterTransactions);
+
   document.querySelector(".close-modal").addEventListener("click", closeModal);
+
   document.getElementById("modal").addEventListener("click", (e) => {
     if (e.target.id === "modal") closeModal();
   });
