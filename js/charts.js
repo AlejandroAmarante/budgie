@@ -53,7 +53,7 @@ export function renderCategoryChart(monthTransactions) {
       emptyMessage.className = "chart-empty-state";
       emptyMessage.innerHTML = `
         <i class="ri-pie-chart-line"></i>
-        <p>Expenses will populate here. Add expenses in the <button class="link-btn" id="goToTransactions">Transactions</button> tab</p>
+        <p>Expenses will populate here.<br> Add expenses in the <button class="link-btn" id="goToTransactions">Transactions</button> tab</p>
       `;
       container.appendChild(emptyMessage);
 
@@ -293,7 +293,7 @@ export function renderTrendChart() {
       emptyMessage.className = "chart-empty-state";
       emptyMessage.innerHTML = `
         <i class="ri-line-chart-line"></i>
-        <p>Income and expenses will populate here. Add transactions in the <button class="link-btn" id="goToTransactionsFromTrend">Transactions</button> tab</p>
+        <p>Income and expenses will populate here.<br>Add transactions in the <button class="link-btn" id="goToTransactionsFromTrend">Transactions</button> tab</p>
       `;
       container.appendChild(emptyMessage);
 

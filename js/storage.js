@@ -1,7 +1,7 @@
 // storage.js - Storage Management Module
 import { state } from "./state.js";
 
-const STORAGE_VERSION = 3; // Incremented version for new trendChartType
+const STORAGE_VERSION = 4; // Incremented version for theme support
 const STORAGE_KEY = "budgetAppData";
 
 export function loadFromStorage() {
@@ -17,6 +17,7 @@ export function loadFromStorage() {
         state.darkMode = data.darkMode || false;
         state.chartType = data.chartType || "pie";
         state.trendChartType = data.trendChartType || "line";
+        state.theme = data.theme || "default";
       }
     }
   } catch (e) {
@@ -26,6 +27,7 @@ export function loadFromStorage() {
     state.darkMode = false;
     state.chartType = "pie";
     state.trendChartType = "line";
+    state.theme = "default";
   }
 }
 
@@ -35,6 +37,7 @@ function migrateData(data) {
   state.darkMode = data.darkMode || false;
   state.chartType = data.chartType || "pie";
   state.trendChartType = data.trendChartType || "line";
+  state.theme = data.theme || "default";
   saveToStorage();
 }
 
@@ -47,6 +50,7 @@ export function saveToStorage() {
       darkMode: state.darkMode,
       chartType: state.chartType,
       trendChartType: state.trendChartType,
+      theme: state.theme,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {

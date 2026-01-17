@@ -395,6 +395,28 @@ export function openSettings() {
   document.getElementById("modalTitle").textContent = "Settings";
   document.getElementById("modalBody").innerHTML = `
     <div class="settings-section">
+      <h4><i class="ri-palette-line"></i> Theme</h4>
+      <div class="settings-actions">
+        <select id="themeSelector" class="input">
+          <option value="default" ${
+            state.theme === "default" ? "selected" : ""
+          }>Default (Dark/Light Mode)</option>
+          <option value="pink" ${
+            state.theme === "pink" ? "selected" : ""
+          }>Pink Dreams</option>
+          <option value="ocean" ${
+            state.theme === "ocean" ? "selected" : ""
+          }>Ocean Blue</option>
+          <option value="forest" ${
+            state.theme === "forest" ? "selected" : ""
+          }>Forest Green</option>
+          <option value="sunset" ${
+            state.theme === "sunset" ? "selected" : ""
+          }>Sunset Orange</option>
+        </select>
+      </div>
+    </div>
+    <div class="settings-section">
       <h4><i class="ri-download-line"></i> Import Data</h4>
       <div class="settings-actions">
         <input type="file" id="importFile" accept=".json" style="display: none;">
@@ -423,10 +445,43 @@ export function openSettings() {
     </div>
   `;
 
+  // Add theme selector event listener
+  document
+    .getElementById("themeSelector")
+    .addEventListener("change", handleThemeChange);
+
   document
     .getElementById("importFile")
     .addEventListener("change", handleImport);
   openModal();
+}
+
+export function handleThemeChange(e) {
+  const selectedTheme = e.target.value;
+  state.theme = selectedTheme;
+  applyTheme(selectedTheme);
+  saveToStorage();
+}
+
+export function applyTheme(theme) {
+  const body = document.body;
+
+  // Remove all theme classes
+  body.classList.remove(
+    "theme-pink",
+    "theme-ocean",
+    "theme-forest",
+    "theme-sunset"
+  );
+
+  if (theme === "default") {
+    // Use dark mode toggle
+    body.setAttribute("data-theme", state.darkMode ? "dark" : "light");
+  } else {
+    // Apply custom theme
+    body.classList.add(`theme-${theme}`);
+    body.removeAttribute("data-theme");
+  }
 }
 
 async function handleImport() {
@@ -467,19 +522,6 @@ export function handleResetData() {
   renderTransactions();
   renderBudgets();
 }
-
-// export function handleSaveOverallBudget() {
-//   const value = document.getElementById("overallBudget").value;
-//   const success = saveOverallBudget(value);
-
-//   if (success) {
-//     if (state.currentTab === "dashboard") {
-//       renderDashboard();
-//     } else if (state.currentTab === "budgets") {
-//       renderBudgets();
-//     }
-//   }
-// }
 
 // Public API functions
 export function editTransaction(id) {

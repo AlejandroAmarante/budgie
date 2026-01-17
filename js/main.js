@@ -1,6 +1,11 @@
 // main.js - Application Entry Point
 import { state, updateCategoriesSet } from "./state.js";
-import { loadFromStorage, exportJSON, exportCSV } from "./storage.js";
+import {
+  loadFromStorage,
+  exportJSON,
+  exportCSV,
+  saveToStorage,
+} from "./storage.js";
 import {
   applyDarkMode,
   toggleDarkMode,
@@ -20,19 +25,24 @@ import {
   editBudget,
   handleDeleteBudget,
   handleResetData,
+  applyTheme,
 } from "./modal.js";
 import { setupMobileNavigation, setupMobileActions } from "./navigation.js";
 import { initPieChartToggle, initTrendChartToggle } from "./charts.js";
 
 function initApp() {
   loadFromStorage();
+  applyTheme(state.theme); // Apply saved theme
   applyDarkMode();
   setupEventListeners();
   setupMobileNavigation();
   setupMobileActions(() => {
-    toggleDarkMode();
-    if (state.currentTab === "dashboard") {
-      renderDashboard();
+    // Only toggle dark mode if using default theme
+    if (state.theme === "default") {
+      toggleDarkMode();
+      if (state.currentTab === "dashboard") {
+        renderDashboard();
+      }
     }
   }, openSettings);
   updateCategoriesSet();
@@ -40,11 +50,9 @@ function initApp() {
   renderTransactions();
   renderBudgets();
   updateFilterCategories();
-
   // Initialize chart type toggle buttons
   initPieChartToggle();
   initTrendChartToggle();
-
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
@@ -65,46 +73,47 @@ function setupEventListeners() {
   });
 
   document.getElementById("darkModeToggle").addEventListener("click", () => {
-    toggleDarkMode();
-    if (state.currentTab === "dashboard") {
-      renderDashboard();
+    // Only allow dark mode toggle if using default theme
+    if (state.theme === "default") {
+      state.darkMode = !state.darkMode;
+      document.body.setAttribute(
+        "data-theme",
+        state.darkMode ? "dark" : "light"
+      );
+      const icon = document.querySelector("#darkModeToggle i");
+      icon.className = state.darkMode ? "ri-sun-line" : "ri-moon-line";
+      saveToStorage();
+      if (state.currentTab === "dashboard") {
+        renderDashboard();
+      }
     }
   });
 
   document
     .getElementById("settingsBtn")
     .addEventListener("click", openSettings);
-
   document
     .getElementById("prevMonth")
     .addEventListener("click", () => changeMonth(-1));
-
   document
     .getElementById("nextMonth")
     .addEventListener("click", () => changeMonth(1));
-
   document
     .getElementById("addTransactionBtn")
     .addEventListener("click", () => openTransactionModal());
-
   document
     .getElementById("addBudgetBtn")
     .addEventListener("click", () => openBudgetModal());
-
   document
     .getElementById("searchTransactions")
     .addEventListener("input", filterTransactions);
-
   document
     .getElementById("filterType")
     .addEventListener("change", filterTransactions);
-
   document
     .getElementById("filterCategory")
     .addEventListener("change", filterTransactions);
-
   document.querySelector(".close-modal").addEventListener("click", closeModal);
-
   document.getElementById("modal").addEventListener("click", (e) => {
     if (e.target.id === "modal") closeModal();
   });
@@ -122,6 +131,7 @@ window.budgetApp = {
   exportCSV,
   resetData: handleResetData,
   closeModal,
+  applyTheme,
 };
 
 // Initialize app when DOM is ready

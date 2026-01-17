@@ -3,6 +3,7 @@ export const state = {
   transactions: [],
   budgets: [],
   darkMode: false,
+  theme: "default",
   currentMonth: new Date(),
   currentTab: "dashboard",
   categories: new Set(),
