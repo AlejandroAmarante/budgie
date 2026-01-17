@@ -34,8 +34,19 @@ export function renderCategoryChart(monthTransactions) {
   // Check if there are any expenses at all across all time
   const hasAnyExpenses = state.transactions.some((t) => t.type === "expense");
 
+  // Get the chart header and toggle container
+  const chartCard = container.closest(".chart-card");
+  const chartHeader = chartCard?.querySelector(".chart-header");
+  const toggleContainer = chartHeader?.querySelector(".chart-type-toggle");
+
   if (!hasAnyExpenses) {
     ctx.style.display = "none";
+
+    // Hide toggle buttons when no data
+    if (toggleContainer) {
+      toggleContainer.style.display = "none";
+    }
+
     let emptyMessage = container.querySelector(".chart-empty-state");
     if (!emptyMessage) {
       emptyMessage = document.createElement("div");
@@ -55,6 +66,11 @@ export function renderCategoryChart(monthTransactions) {
     }
     emptyMessage.style.display = "flex";
     return;
+  }
+
+  // Show toggle buttons when data exists
+  if (toggleContainer) {
+    toggleContainer.style.display = "flex";
   }
 
   // Hide empty message and show canvas
@@ -246,14 +262,63 @@ export function initTrendChartToggle() {
 
 export function renderTrendChart() {
   const ctx = document.getElementById("trendChart");
+  const container = ctx.parentElement;
 
   const now = new Date();
   const currentYearMonth = `${now.getFullYear()}-${String(
     now.getMonth() + 1
   ).padStart(2, "0")}`;
 
-  // Check if there are any transactions at all
-  const hasAnyTransactions = state.transactions.length > 0;
+  // Check if there are any income or expense transactions at all
+  const hasAnyIncomeOrExpense = state.transactions.some(
+    (t) => t.type === "income" || t.type === "expense"
+  );
+
+  // Get the chart header and toggle container
+  const chartCard = container.closest(".chart-card");
+  const chartHeader = chartCard?.querySelector(".chart-header");
+  const toggleContainer = chartHeader?.querySelector(".chart-type-toggle");
+
+  if (!hasAnyIncomeOrExpense) {
+    ctx.style.display = "none";
+
+    // Hide toggle buttons when no data
+    if (toggleContainer) {
+      toggleContainer.style.display = "none";
+    }
+
+    let emptyMessage = container.querySelector(".chart-empty-state");
+    if (!emptyMessage) {
+      emptyMessage = document.createElement("div");
+      emptyMessage.className = "chart-empty-state";
+      emptyMessage.innerHTML = `
+        <i class="ri-line-chart-line"></i>
+        <p>Income and expenses will populate here. Add transactions in the <button class="link-btn" id="goToTransactionsFromTrend">Transactions</button> tab</p>
+      `;
+      container.appendChild(emptyMessage);
+
+      // Add click handler
+      emptyMessage
+        .querySelector("#goToTransactionsFromTrend")
+        .addEventListener("click", () => {
+          document.querySelector('[data-tab="transactions"]').click();
+        });
+    }
+    emptyMessage.style.display = "flex";
+    return;
+  }
+
+  // Show toggle buttons when data exists
+  if (toggleContainer) {
+    toggleContainer.style.display = "flex";
+  }
+
+  // Hide empty message and show canvas
+  ctx.style.display = "block";
+  const emptyMessage = container.querySelector(".chart-empty-state");
+  if (emptyMessage) {
+    emptyMessage.style.display = "none";
+  }
 
   const monthsData = [];
 
@@ -340,135 +405,131 @@ export function renderTrendChart() {
   // Prepare datasets - order matters for proper layering (bottom to top)
   const datasets = [];
 
-  // Only add data lines if there are any transactions
-  if (hasAnyTransactions) {
-    if (chartType === "bar") {
-      // Bar chart configuration - grouped bars
+  if (chartType === "bar") {
+    // Bar chart configuration - grouped bars
+    datasets.push({
+      label: "Income",
+      data: monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
+      backgroundColor: "rgb(16, 185, 129)",
+      borderColor: "rgb(16, 185, 129)",
+      borderWidth: 1,
+    });
+
+    datasets.push({
+      label: "Expenses",
+      data: monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
+      backgroundColor: "rgb(239, 68, 68)",
+      borderColor: "rgb(239, 68, 68)",
+      borderWidth: 1,
+    });
+
+    // Add projected data for future months
+    if (hasFutureData) {
       datasets.push({
-        label: "Income",
-        data: monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
-        backgroundColor: "rgb(16, 185, 129)",
+        label: "Projected Income",
+        data: monthsData.map((d) =>
+          d.isFuture ? d.actualIncome + d.projectedIncome : null
+        ),
+        backgroundColor: "rgba(16, 185, 129, 0.5)",
         borderColor: "rgb(16, 185, 129)",
         borderWidth: 1,
+        borderDash: [5, 5],
       });
 
       datasets.push({
-        label: "Expenses",
-        data: monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
-        backgroundColor: "rgb(239, 68, 68)",
+        label: "Projected Expenses",
+        data: monthsData.map((d) =>
+          d.isFuture ? d.actualExpenses + d.projectedExpenses : null
+        ),
+        backgroundColor: "rgba(239, 68, 68, 0.5)",
         borderColor: "rgb(239, 68, 68)",
         borderWidth: 1,
-      });
-
-      // Add projected data for future months
-      if (hasFutureData) {
-        datasets.push({
-          label: "Projected Income",
-          data: monthsData.map((d) =>
-            d.isFuture ? d.actualIncome + d.projectedIncome : null
-          ),
-          backgroundColor: "rgba(16, 185, 129, 0.5)",
-          borderColor: "rgb(16, 185, 129)",
-          borderWidth: 1,
-          borderDash: [5, 5],
-        });
-
-        datasets.push({
-          label: "Projected Expenses",
-          data: monthsData.map((d) =>
-            d.isFuture ? d.actualExpenses + d.projectedExpenses : null
-          ),
-          backgroundColor: "rgba(239, 68, 68, 0.5)",
-          borderColor: "rgb(239, 68, 68)",
-          borderWidth: 1,
-          borderDash: [5, 5],
-        });
-      }
-    } else {
-      // Line chart configuration (existing logic)
-      // First add projected datasets (bottom layer) if they exist
-      if (hasFutureData) {
-        datasets.push({
-          label: "Projected Expenses",
-          data: monthsData.map((d, idx) => {
-            // If we have actual data, connect from the last actual month
-            if (hasActualData && idx === lastActualIndex)
-              return d.actualExpenses;
-            // Show projected expenses for future months
-            return d.isFuture ? d.actualExpenses + d.projectedExpenses : null;
-          }),
-          borderColor: "rgb(239, 68, 68)",
-          backgroundColor: "transparent",
-          borderDash: [5, 5],
-          borderWidth: 2,
-          tension: 0.4,
-          fill: false,
-          spanGaps: true,
-          order: 2,
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          pointBackgroundColor: "transparent",
-          pointBorderColor: "rgb(239, 68, 68)",
-          pointBorderWidth: 2,
-        });
-
-        datasets.push({
-          label: "Projected Income",
-          data: monthsData.map((d, idx) => {
-            // If we have actual data, connect from the last actual month
-            if (hasActualData && idx === lastActualIndex) return d.actualIncome;
-            // Show projected income for future months
-            return d.isFuture ? d.actualIncome + d.projectedIncome : null;
-          }),
-          borderColor: "rgb(16, 185, 129)",
-          backgroundColor: "transparent",
-          borderDash: [5, 5],
-          borderWidth: 2,
-          tension: 0.4,
-          fill: false,
-          spanGaps: true,
-          order: 1,
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          pointBackgroundColor: "transparent",
-          pointBorderColor: "rgb(16, 185, 129)",
-          pointBorderWidth: 2,
-        });
-      }
-
-      // Then add actual datasets (top layer)
-      datasets.push({
-        label: "Expenses",
-        data: monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
-        borderColor: "rgb(239, 68, 68)",
-        backgroundColor: "rgb(239, 68, 68)",
-        borderWidth: 2,
-        tension: 0.4,
-        fill: false,
-        spanGaps: false,
-        order: 4,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointBackgroundColor: "rgb(239, 68, 68)",
-        pointBorderColor: "rgb(239, 68, 68)",
-      });
-
-      datasets.push({
-        label: "Income",
-        data: monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
-        borderColor: "rgb(16, 185, 129)",
-        backgroundColor: "rgb(16, 185, 129)",
-        borderWidth: 2,
-        tension: 0.4,
-        fill: false,
-        spanGaps: false,
-        order: 3,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointBackgroundColor: "rgb(16, 185, 129)",
-        pointBorderColor: "rgb(16, 185, 129)",
+        borderDash: [5, 5],
       });
     }
+  } else {
+    // Line chart configuration (existing logic)
+    // First add projected datasets (bottom layer) if they exist
+    if (hasFutureData) {
+      datasets.push({
+        label: "Projected Expenses",
+        data: monthsData.map((d, idx) => {
+          // If we have actual data, connect from the last actual month
+          if (hasActualData && idx === lastActualIndex) return d.actualExpenses;
+          // Show projected expenses for future months
+          return d.isFuture ? d.actualExpenses + d.projectedExpenses : null;
+        }),
+        borderColor: "rgb(239, 68, 68)",
+        backgroundColor: "transparent",
+        borderDash: [5, 5],
+        borderWidth: 2,
+        tension: 0.4,
+        fill: false,
+        spanGaps: true,
+        order: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: "transparent",
+        pointBorderColor: "rgb(239, 68, 68)",
+        pointBorderWidth: 2,
+      });
+
+      datasets.push({
+        label: "Projected Income",
+        data: monthsData.map((d, idx) => {
+          // If we have actual data, connect from the last actual month
+          if (hasActualData && idx === lastActualIndex) return d.actualIncome;
+          // Show projected income for future months
+          return d.isFuture ? d.actualIncome + d.projectedIncome : null;
+        }),
+        borderColor: "rgb(16, 185, 129)",
+        backgroundColor: "transparent",
+        borderDash: [5, 5],
+        borderWidth: 2,
+        tension: 0.4,
+        fill: false,
+        spanGaps: true,
+        order: 1,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: "transparent",
+        pointBorderColor: "rgb(16, 185, 129)",
+        pointBorderWidth: 2,
+      });
+    }
+
+    // Then add actual datasets (top layer)
+    datasets.push({
+      label: "Expenses",
+      data: monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
+      borderColor: "rgb(239, 68, 68)",
+      backgroundColor: "rgb(239, 68, 68)",
+      borderWidth: 2,
+      tension: 0.4,
+      fill: false,
+      spanGaps: false,
+      order: 4,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      pointBackgroundColor: "rgb(239, 68, 68)",
+      pointBorderColor: "rgb(239, 68, 68)",
+    });
+
+    datasets.push({
+      label: "Income",
+      data: monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
+      borderColor: "rgb(16, 185, 129)",
+      backgroundColor: "rgb(16, 185, 129)",
+      borderWidth: 2,
+      tension: 0.4,
+      fill: false,
+      spanGaps: false,
+      order: 3,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      pointBackgroundColor: "rgb(16, 185, 129)",
+      pointBorderColor: "rgb(16, 185, 129)",
+    });
   }
 
   // Add budget line if overall budget is set (works for both chart types)
@@ -596,11 +657,8 @@ export function renderTrendChart() {
             padding: 10,
           },
           grid: {
-            color: getComputedStyle(document.documentElement)
-              .getPropertyValue("--border")
-              .trim(),
+            display: false,
             drawBorder: true,
-            offset: chartType === "bar",
           },
         },
       },
