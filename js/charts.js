@@ -29,6 +29,7 @@ export function renderCategoryChart(monthTransactions) {
 
   if (charts.category) {
     charts.category.destroy();
+    charts.category = null;
   }
 
   // Check if there are any expenses at all across all time
@@ -42,9 +43,11 @@ export function renderCategoryChart(monthTransactions) {
   if (!hasAnyExpenses) {
     ctx.style.display = "none";
 
-    // Hide toggle buttons when no data
+    // Hide toggle buttons when no data - use visibility to preserve layout
     if (toggleContainer) {
-      toggleContainer.style.display = "none";
+      toggleContainer.style.visibility = "hidden";
+      toggleContainer.style.opacity = "0";
+      toggleContainer.style.pointerEvents = "none";
     }
 
     let emptyMessage = container.querySelector(".chart-empty-state");
@@ -70,7 +73,9 @@ export function renderCategoryChart(monthTransactions) {
 
   // Show toggle buttons when data exists
   if (toggleContainer) {
-    toggleContainer.style.display = "flex";
+    toggleContainer.style.visibility = "visible";
+    toggleContainer.style.opacity = "1";
+    toggleContainer.style.pointerEvents = "auto";
   }
 
   // Hide empty message and show canvas
@@ -176,6 +181,17 @@ export function initPieChartToggle() {
 
   const toggleContainer = document.createElement("div");
   toggleContainer.className = "chart-type-toggle";
+
+  // Check if there's any expense data to determine initial visibility
+  const hasAnyExpenses = state.transactions.some((t) => t.type === "expense");
+
+  // Set initial visibility state
+  if (!hasAnyExpenses) {
+    toggleContainer.style.visibility = "hidden";
+    toggleContainer.style.opacity = "0";
+    toggleContainer.style.pointerEvents = "none";
+  }
+
   toggleContainer.innerHTML = `
     <button class="icon-btn chart-type-btn ${
       state.chartType === "pie" ? "active" : ""
@@ -224,6 +240,19 @@ export function initTrendChartToggle() {
 
   const toggleContainer = document.createElement("div");
   toggleContainer.className = "chart-type-toggle";
+
+  // Check if there's any income/expense data to determine initial visibility
+  const hasAnyIncomeOrExpense = state.transactions.some(
+    (t) => t.type === "income" || t.type === "expense"
+  );
+
+  // Set initial visibility state
+  if (!hasAnyIncomeOrExpense) {
+    toggleContainer.style.visibility = "hidden";
+    toggleContainer.style.opacity = "0";
+    toggleContainer.style.pointerEvents = "none";
+  }
+
   toggleContainer.innerHTML = `
     <button class="icon-btn chart-type-btn ${
       state.trendChartType === "line" ? "active" : ""
@@ -279,12 +308,19 @@ export function renderTrendChart() {
   const chartHeader = chartCard?.querySelector(".chart-header");
   const toggleContainer = chartHeader?.querySelector(".chart-type-toggle");
 
+  if (charts.trend) {
+    charts.trend.destroy();
+    charts.trend = null;
+  }
+
   if (!hasAnyIncomeOrExpense) {
     ctx.style.display = "none";
 
-    // Hide toggle buttons when no data
+    // Hide toggle buttons when no data - use visibility to preserve layout
     if (toggleContainer) {
-      toggleContainer.style.display = "none";
+      toggleContainer.style.visibility = "hidden";
+      toggleContainer.style.opacity = "0";
+      toggleContainer.style.pointerEvents = "none";
     }
 
     let emptyMessage = container.querySelector(".chart-empty-state");
@@ -310,7 +346,9 @@ export function renderTrendChart() {
 
   // Show toggle buttons when data exists
   if (toggleContainer) {
-    toggleContainer.style.display = "flex";
+    toggleContainer.style.visibility = "visible";
+    toggleContainer.style.opacity = "1";
+    toggleContainer.style.pointerEvents = "auto";
   }
 
   // Hide empty message and show canvas
@@ -364,10 +402,6 @@ export function renderTrendChart() {
       projectedExpenses: isFuture ? projectedExpenses : 0,
       isFuture,
     });
-  }
-
-  if (charts.trend) {
-    charts.trend.destroy();
   }
 
   // Get calculated overall budget

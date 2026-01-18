@@ -170,7 +170,7 @@
                 <div class="section-header">
                     <h2><i class="ri-exchange-line"></i> Transactions</h2>
                     <button id="addTransactionBtn" class="btn btn-primary">
-                        <i class="ri-add-line"></i> Add Transaction
+                        <i class="ri-add-line"></i><span> Add Transaction</span>
                     </button>
                 </div>
 
@@ -193,7 +193,7 @@
                 <div class="section-header">
                     <h2><i class="ri-target-fill"></i> Budget Management</h2>
                     <button id="addBudgetBtn" class="btn btn-primary">
-                        <i class="ri-add-line"></i> Add Budget
+                        <i class="ri-add-line"></i><span> Add Budget</span>
                     </button>
                 </div>
 
@@ -224,6 +224,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script type="module" src="js/main.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        console.log('SW registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
 </body>
 
 </html>

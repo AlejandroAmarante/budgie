@@ -15,7 +15,6 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
-
   // Network-first for EVERYTHING
   event.respondWith(
     fetch(request)

@@ -123,7 +123,7 @@ body.theme-pink {
   --primary-dark: #ff1493;
   --primary-light: rgba(255, 105, 180, 0.1);
   --primary-hover: rgba(255, 105, 180, 0.025);
-  
+
   --secondary: #ffc0cb;
   --success: #ff69b4;
   --danger: #ff1493;
@@ -131,17 +131,17 @@ body.theme-pink {
   --warning: #ffb6c1;
   --warning-bg: rgba(255, 182, 193, 0.1);
   --info: #ff69b4;
-  
+
   --bg-primary: #fff0f5;
   --bg-secondary: #ffe4e1;
   --bg-tertiary: #ffd1dc;
-  
+
   --text-primary: #4a0e4e;
   --text-secondary: #8b4789;
-  
+
   --border: #ffc0cb;
   --shadow: rgba(255, 105, 180, 0.1);
-  
+
   --income-color: #ff69b4;
   --income-bg: rgba(255, 105, 180, 0.1);
   --expense-color: #ff1493;
@@ -156,7 +156,7 @@ body.theme-ocean {
   --primary-dark: #0284c7;
   --primary-light: rgba(14, 165, 233, 0.1);
   --primary-hover: rgba(14, 165, 233, 0.025);
-  
+
   --secondary: #64748b;
   --success: #10b981;
   --danger: #ef4444;
@@ -164,17 +164,17 @@ body.theme-ocean {
   --warning: #f59e0b;
   --warning-bg: rgba(245, 158, 11, 0.1);
   --info: #0ea5e9;
-  
+
   --bg-primary: #f0f9ff;
   --bg-secondary: #e0f2fe;
   --bg-tertiary: #bae6fd;
-  
+
   --text-primary: #0c4a6e;
   --text-secondary: #075985;
-  
+
   --border: #7dd3fc;
   --shadow: rgba(14, 165, 233, 0.1);
-  
+
   --income-color: #0ea5e9;
   --income-bg: rgba(14, 165, 233, 0.1);
   --expense-color: #ef4444;
@@ -209,10 +209,10 @@ body.theme-forest {
   --expense-bg: rgba(239, 68, 68, 0.1);
   --budget-color: #16a34a;
   --budget-bg: rgba(22, 163, 74, 0.1);
-  }
+}
 
-  /* Sunset Orange Theme */
-  body.theme-sunset {
+/* Sunset Orange Theme */
+body.theme-sunset {
   --primary: #f97316;
   --primary-dark: #ea580c;
   --primary-light: rgba(249, 115, 22, 0.1);
@@ -237,7 +237,7 @@ body.theme-forest {
   --expense-bg: rgba(220, 38, 38, 0.1);
   --budget-color: #ea580c;
   --budget-bg: rgba(234, 88, 12, 0.1);
-  }
+}
 
 /* Reset */
 * {
@@ -309,8 +309,8 @@ body {
 .tab-nav {
   background-color: var(--bg-primary);
   border-bottom: 0;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   overflow-x: auto;
 }
 
@@ -326,6 +326,7 @@ body {
   transition: all var(--transition-fast);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-sm);
   white-space: nowrap;
 }
@@ -652,7 +653,7 @@ body {
 }
 
 .chart-type-toggle {
-  display: none;
+  display: flex;
   gap: var(--space-sm);
   margin-left: auto;
   grid-column: 3;
@@ -1364,6 +1365,22 @@ body {
   .form-actions .btn {
     width: 100%;
     justify-content: center;
+  }
+
+  #addTransactionBtn span,
+  #addBudgetBtn span {
+    display: none;
+  }
+
+  #addTransactionBtn,
+  #addBudgetBtn {
+    border-radius: var(--radius-full);
+  }
+
+  #addTransactionBtn,
+  #addBudgetBtn {
+    padding: 0.5rem;
+    min-width: auto;
   }
 }
 
