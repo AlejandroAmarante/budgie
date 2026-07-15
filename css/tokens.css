@@ -1,0 +1,227 @@
+/*
+  tokens.css
+  Design tokens for Budgie. Every color, size, and timing value used across
+  the app is defined here so themes and dark mode are a matter of swapping
+  attribute selectors, never touching component CSS.
+
+  Two independent axes:
+    - data-color-scheme="light|dark"   -> only applies when data-theme="default"
+    - data-theme="default|pink|ocean|forest|sunset" -> fixed light palettes
+
+  Semantic colors (income/expense/info/warning) stay constant across themes
+  on purpose: green always means "money in", red always means "money out",
+  regardless of which accent theme is active. Only brand color changes.
+*/
+
+:root {
+  /* ---- Type ---- */
+  --font-display: "Quicksand", "Segoe UI", sans-serif;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.375rem;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ---- Spacing (4px base) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* ---- Radius: generous + round, echoes the bird's plump silhouette ---- */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+
+  /* ---- Motion ---- */
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+  --duration-slow: 360ms;
+
+  /* ---- Elevation ---- */
+  --shadow-sm: 0 1px 2px rgba(20, 20, 15, 0.06), 0 1px 1px rgba(20, 20, 15, 0.04);
+  --shadow-md: 0 8px 24px -8px rgba(20, 20, 15, 0.18);
+  --shadow-lg: 0 20px 48px -12px rgba(20, 20, 15, 0.28);
+  --shadow-focus: 0 0 0 3px var(--color-primary-soft);
+
+  /* ---- Layout ---- */
+  --max-width: 1180px;
+  --nav-size-mobile: 68px;
+  --nav-size-desktop: 88px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+
+  /* ---- Z-index scale ---- */
+  --z-nav: 60;
+  --z-sheet-backdrop: 80;
+  --z-sheet: 90;
+  --z-toast: 100;
+
+  /* ---- Semantic colors: constant across every theme ---- */
+  --color-income: #2fae60;
+  --color-income-soft: #e3f5ea;
+  --color-expense: #e4573d;
+  --color-expense-soft: #fbe7e2;
+  --color-info: #3d7fe4;
+  --color-info-soft: #e6eefc;
+  --color-danger: #e4573d;
+  --color-danger-strong: #c93f28;
+  --color-warning: #dc9a1a;
+  --color-warning-soft: #fbf0da;
+}
+
+/* ============ Default theme — light ============ */
+:root,
+:root[data-theme="default"] {
+  --color-bg: #faf9f6;
+  --color-bg-elevated: #ffffff;
+  --color-bg-subtle: #f1f0ea;
+  --color-bg-sunken: #eceae2;
+  --color-border: #e7e4d9;
+  --color-text: #1a1b17;
+  --color-text-secondary: #6b6c62;
+  --color-text-faint: #9c9d92;
+
+  --color-primary: #2fae60;
+  --color-primary-strong: #1f8a4a;
+  --color-primary-soft: #e3f5ea;
+  --color-accent: #eeab26;
+  --color-accent-soft: #fbf0d9;
+  --color-on-primary: #ffffff;
+}
+
+/* ============ Default theme — dark ============ */
+:root[data-theme="default"][data-color-scheme="dark"] {
+  --color-bg: #121310;
+  --color-bg-elevated: #1c1e19;
+  --color-bg-subtle: #232520;
+  --color-bg-sunken: #191a16;
+  --color-border: #2d2f28;
+  --color-text: #f2f2ec;
+  --color-text-secondary: #a9aa9e;
+  --color-text-faint: #74756a;
+
+  --color-primary: #4bc97f;
+  --color-primary-strong: #6bd699;
+  --color-primary-soft: rgba(75, 201, 127, 0.16);
+  --color-accent: #f0bb51;
+  --color-accent-soft: rgba(240, 187, 81, 0.16);
+  --color-on-primary: #0c130e;
+
+  --color-income: #4bc97f;
+  --color-income-soft: rgba(75, 201, 127, 0.16);
+  --color-expense: #f0836b;
+  --color-expense-soft: rgba(240, 131, 107, 0.16);
+  --color-info: #6fa0f0;
+  --color-info-soft: rgba(111, 160, 240, 0.16);
+  --color-danger: #f0836b;
+  --color-danger-strong: #f7a08c;
+  --color-warning: #e3b653;
+  --color-warning-soft: rgba(227, 182, 83, 0.16);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 20px 48px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* ============ Pink Dreams ============ */
+:root[data-theme="pink"] {
+  --color-bg: #fff3f7;
+  --color-bg-elevated: #ffffff;
+  --color-bg-subtle: #ffe6ee;
+  --color-bg-sunken: #ffd9e6;
+  --color-border: #f8c9d9;
+  --color-text: #451a2c;
+  --color-text-secondary: #8a5468;
+  --color-text-faint: #b98a9c;
+
+  --color-primary: #e0508b;
+  --color-primary-strong: #c23b73;
+  --color-primary-soft: #fce0eb;
+  --color-accent: #f5a623;
+  --color-accent-soft: #fdedd2;
+  --color-on-primary: #ffffff;
+}
+
+/* ============ Ocean Blue ============ */
+:root[data-theme="ocean"] {
+  --color-bg: #f0f9fd;
+  --color-bg-elevated: #ffffff;
+  --color-bg-subtle: #e0f2fb;
+  --color-bg-sunken: #cfe9f7;
+  --color-border: #bfe1f4;
+  --color-text: #0c3549;
+  --color-text-secondary: #4c7a90;
+  --color-text-faint: #83a9bb;
+
+  --color-primary: #0f8bc7;
+  --color-primary-strong: #0b6c9c;
+  --color-primary-soft: #dcf0fa;
+  --color-accent: #f2ab27;
+  --color-accent-soft: #fcecd2;
+  --color-on-primary: #ffffff;
+}
+
+/* ============ Forest Green ============ */
+:root[data-theme="forest"] {
+  --color-bg: #f2faf4;
+  --color-bg-elevated: #ffffff;
+  --color-bg-subtle: #e3f5e7;
+  --color-bg-sunken: #d3edd9;
+  --color-border: #c6e7cd;
+  --color-text: #133621;
+  --color-text-secondary: #4c7359;
+  --color-text-faint: #85a690;
+
+  --color-primary: #1f9d51;
+  --color-primary-strong: #167c3f;
+  --color-primary-soft: #dcf3e2;
+  --color-accent: #d9a01c;
+  --color-accent-soft: #f8ecce;
+  --color-on-primary: #ffffff;
+}
+
+/* ============ Sunset Orange ============ */
+:root[data-theme="sunset"] {
+  --color-bg: #fff6ee;
+  --color-bg-elevated: #ffffff;
+  --color-bg-subtle: #ffe9d6;
+  --color-bg-sunken: #ffdcbd;
+  --color-border: #fbd2ab;
+  --color-text: #4a2510;
+  --color-text-secondary: #8f5f3c;
+  --color-text-faint: #bb9370;
+
+  --color-primary: #e2650f;
+  --color-primary-strong: #bb4f09;
+  --color-primary-soft: #fce3cd;
+  --color-accent: #2f9d8f;
+  --color-accent-soft: #dcf1ee;
+  --color-on-primary: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}

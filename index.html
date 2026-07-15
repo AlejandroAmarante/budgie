@@ -2,241 +2,230 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#2563eb">
-    <meta name="description" content="Budget Management PWA - Track income, expenses, and manage your budget">
-    <title>Budgie</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-        rel="stylesheet">
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/fonts/remixicon.css" rel="stylesheet">
-    <link rel="icon" type="image/svg" href="assets/icons/logo.svg">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2fae60">
+  <meta name="description" content="Budgie — a fast, friendly way to track income, expenses, and budgets.">
+  <title>Budgie</title>
+
+  <!-- Set theme + color scheme before first paint to avoid a flash -->
+  <script>
+    (function () {
+      try {
+        var saved = JSON.parse(localStorage.getItem("budgetAppData") || "{}");
+        document.documentElement.setAttribute("data-theme", saved.theme || "default");
+        document.documentElement.setAttribute("data-color-scheme", saved.darkMode ? "dark" : "light");
+      } catch (e) {
+        document.documentElement.setAttribute("data-theme", "default");
+      }
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/fonts/remixicon.css" rel="stylesheet">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/logo.svg">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
 </head>
 
 <body>
-    <div id="app">
-        <header class="app-header">
-            <div class="header-content">
-                <h1>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
-                        stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-bird-icon lucide-bird">
-                        <path d="M16 7h.01" />
-                        <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
-                        <path d="m20 7 2 .5-2 .5" />
-                        <path d="M10 18v3" />
-                        <path d="M14 17.75V21" />
-                        <path d="M7 18a6 6 0 0 0 3.84-10.61" />
-                    </svg>Budgie
-                </h1>
+  <a class="skip-link" href="#mainContent">Skip to content</a>
 
-                <!-- Desktop Navigation -->
-                <nav class="tab-nav">
-                    <button class="tab-btn active" data-tab="dashboard">
-                        <i class="ri-dashboard-line"></i> Dashboard
-                    </button>
-                    <button class="tab-btn" data-tab="transactions">
-                        <i class="ri-exchange-line"></i> Transactions
-                    </button>
-                    <button class="tab-btn" data-tab="budgets">
-                        <i class="ri-target-fill"></i> Budgets
-                    </button>
-                </nav>
+  <div id="app">
+    <header class="app-header">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 7h.01" />
+          <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
+          <path d="m20 7 2 .5-2 .5" />
+          <path d="M10 18v3" />
+          <path d="M14 17.75V21" />
+          <path d="M7 18a6 6 0 0 0 3.84-10.61" />
+        </svg>
+        Budgie
+      </div>
+    </header>
 
-                <!-- Mobile Hamburger Button -->
-                <button id="hamburgerBtn" class="hamburger-btn" title="Menu">
-                    <i class="ri-menu-line"></i>
-                </button>
+    <nav id="appNav" class="app-nav" aria-label="Primary">
+      <div class="nav-brand" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M16 7h.01" />
+          <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
+          <path d="m20 7 2 .5-2 .5" />
+          <path d="M10 18v3" />
+          <path d="M14 17.75V21" />
+          <path d="M7 18a6 6 0 0 0 3.84-10.61" />
+        </svg>
+      </div>
 
-                <div class="header-actions">
-                    <button id="darkModeToggle" class="icon-btn" title="Toggle Dark Mode">
-                        <i class="ri-moon-line"></i>
-                    </button>
-                    <button id="settingsBtn" class="icon-btn" title="Settings">
-                        <i class="ri-settings-3-line"></i>
-                    </button>
-                </div>
+      <button type="button" class="nav-item is-active" data-view="dashboard" aria-current="page">
+        <i class="ri-dashboard-line" aria-hidden="true"></i>
+        <span>Dashboard</span>
+      </button>
+      <button type="button" class="nav-item" data-view="transactions">
+        <i class="ri-exchange-line" aria-hidden="true"></i>
+        <span>Activity</span>
+      </button>
+
+      <button type="button" class="nav-fab" id="quickAddBtn" aria-label="Add transaction">
+        <i class="ri-add-line" aria-hidden="true"></i>
+      </button>
+
+      <button type="button" class="nav-item" data-view="budgets">
+        <i class="ri-pie-chart-2-line" aria-hidden="true"></i>
+        <span>Budgets</span>
+      </button>
+      <button type="button" class="nav-item" id="settingsNavBtn">
+        <i class="ri-settings-3-line" aria-hidden="true"></i>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <main class="app-main" id="mainContent">
+      <div class="view-inner">
+
+        <!-- ===================== Dashboard ===================== -->
+        <section id="dashboard" class="view is-active" aria-labelledby="dashboardTitle">
+          <h1 id="dashboardTitle" class="visually-hidden">Dashboard</h1>
+
+          <div class="month-switcher" id="monthSwitcher">
+            <button type="button" class="icon-btn" id="prevMonthBtn" aria-label="Previous month">
+              <i class="ri-arrow-left-s-line" aria-hidden="true"></i>
+            </button>
+            <h2 id="currentMonthLabel"></h2>
+            <button type="button" class="icon-btn" id="nextMonthBtn" aria-label="Next month">
+              <i class="ri-arrow-right-s-line" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <div id="budgetWarnings"></div>
+
+          <div class="stat-scroller">
+            <div class="card stat-card income">
+              <div class="stat-card-icon"><i class="ri-arrow-up-circle-line" aria-hidden="true"></i></div>
+              <div class="stat-card-body">
+                <div class="stat-card-label" id="incomeLabel">Income</div>
+                <div class="stat-card-value tabular-nums" id="statIncome">$0.00</div>
+              </div>
             </div>
-
-            <!-- Mobile Navigation Menu (add after header) -->
-            <div id="mobileNavOverlay" class="mobile-nav-overlay"></div>
-            <nav id="mobileNav" class="mobile-nav">
-                <div class="mobile-nav-header">
-                    <h3>Menu</h3>
-                    <button class="icon-btn close-mobile-nav">
-                        <i class="ri-close-line"></i>
-                    </button>
-                </div>
-                <button class="mobile-tab-btn active" data-tab="dashboard">
-                    <i class="ri-dashboard-line"></i> Dashboard
-                </button>
-                <button class="mobile-tab-btn" data-tab="transactions">
-                    <i class="ri-exchange-line"></i> Transactions
-                </button>
-                <button class="mobile-tab-btn" data-tab="budgets">
-                    <i class="ri-target-fill"></i> Budgets
-                </button>
-
-                <div class="mobile-nav-divider"></div>
-
-                <button class="mobile-tab-btn" id="mobileDarkModeToggle">
-                    <i class="ri-moon-line"></i>
-                </button>
-                <button class="mobile-tab-btn" id="mobileSettingsBtn">
-                    <i class="ri-settings-3-line"></i> Settings
-                </button>
-            </nav>
-        </header>
-
-
-
-        <main class="app-main">
-            <section id="dashboard" class="tab-content active">
-                <div class="month-selector">
-                    <button id="prevMonth" class="icon-btn">
-                        <i class="ri-arrow-left-s-line"></i>
-                    </button>
-                    <h2 id="currentMonth"></h2>
-                    <button id="nextMonth" class="icon-btn">
-                        <i class="ri-arrow-right-s-line"></i>
-                    </button>
-                </div>
-
-                <div id="budgetWarnings" class="warnings-container"></div>
-
-                <div class="summary-cards">
-                    <div class="card summary-card income-card">
-                        <div class="card-icon">
-                            <i class="ri-arrow-up-circle-line"></i>
-                        </div>
-                        <div class="card-content income">
-                            <span class="card-label">Total Income</span>
-                            <span class="card-value" id="totalIncome">$0.00</span>
-                        </div>
-                    </div>
-                    <div class="card summary-card expense-card">
-                        <div class="card-icon">
-                            <i class="ri-arrow-down-circle-line"></i>
-                        </div>
-                        <div class="card-content expense">
-                            <span class="card-label">Total Expenses</span>
-                            <span class="card-value" id="totalExpenses">$0.00</span>
-                        </div>
-                    </div>
-                    <div class="card summary-card balance-card">
-                        <div class="card-icon">
-                            <i class="ri-wallet-3-fill"></i>
-                        </div>
-                        <div class="card-content balance">
-                            <span class="card-label">Balance</span>
-                            <span class="card-value" id="balance">$0.00</span>
-                        </div>
-                    </div>
-                    <div class="card summary-card budget-card">
-                        <div class="card-icon">
-                            <i class="ri-target-fill"></i>
-                        </div>
-                        <div class="card-content budget">
-                            <span class="card-label">Monthly Budget</span>
-                            <span class="card-value" id="budget">$0.00</span>
-                        </div>
-                    </div>
-                </div>
-
-
-
-                <div class="charts-container">
-                    <div class="card chart-card pie-chart">
-                        <div class="chart-header">
-                            <h3> Expenses by Category</h3>
-                        </div>
-                        <canvas id="categoryChart"></canvas>
-                    </div>
-                    <div class="card chart-card line-chart">
-                        <div class="chart-header">
-                            <h3> Income vs Expenses</h3>
-                        </div>
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
-            </section>
-
-            <section id="transactions" class="tab-content">
-                <div class="section-header">
-                    <h2><i class="ri-exchange-line"></i> Transactions</h2>
-                    <button id="addTransactionBtn" class="btn btn-primary">
-                        <i class="ri-add-line"></i><span> Add Transaction</span>
-                    </button>
-                </div>
-
-                <div class="filters">
-                    <input type="text" id="searchTransactions" placeholder="Search transactions..." class="input">
-                    <select id="filterType" class="input">
-                        <option value="all">All Types</option>
-                        <option value="income">Income</option>
-                        <option value="expense">Expense</option>
-                    </select>
-                    <select id="filterCategory" class="input">
-                        <option value="all">All Categories</option>
-                    </select>
-                </div>
-
-                <div id="transactionsList" class="transactions-list"></div>
-            </section>
-
-            <section id="budgets" class="tab-content">
-                <div class="section-header">
-                    <h2><i class="ri-target-fill"></i> Budget Management</h2>
-                    <button id="addBudgetBtn" class="btn btn-primary">
-                        <i class="ri-add-line"></i><span> Add Budget</span>
-                    </button>
-                </div>
-
-                <div class="card">
-                    <h3><i class="ri-calendar-line"></i> Overall Monthly Budget</h3>
-                    <div class="budget-summary">
-                        <span class="budget-summary-label">Total from all budgets:</span>
-                        <span class="budget-summary-value" id="overallBudgetDisplay">$0.00</span>
-                    </div>
-                </div>
-
-                <div id="budgetsList" class="budgets-list"></div>
-            </section>
-        </main>
-
-        <div id="modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 id="modalTitle"></h3>
-                    <button class="icon-btn close-modal">
-                        <i class="ri-close-large-fill"></i>
-                    </button>
-                </div>
-                <div class="modal-body" id="modalBody"></div>
+            <div class="card stat-card expense">
+              <div class="stat-card-icon"><i class="ri-arrow-down-circle-line" aria-hidden="true"></i></div>
+              <div class="stat-card-body">
+                <div class="stat-card-label" id="expenseLabel">Expenses</div>
+                <div class="stat-card-value tabular-nums" id="statExpenses">$0.00</div>
+              </div>
             </div>
-        </div>
-    </div>
+            <div class="card stat-card balance">
+              <div class="stat-card-icon"><i class="ri-scales-3-line" aria-hidden="true"></i></div>
+              <div class="stat-card-body">
+                <div class="stat-card-label" id="balanceLabel">Balance</div>
+                <div class="stat-card-value tabular-nums" id="statBalance">$0.00</div>
+              </div>
+            </div>
+            <div class="card stat-card budget">
+              <div class="stat-card-icon"><i class="ri-target-line" aria-hidden="true"></i></div>
+              <div class="stat-card-body">
+                <div class="stat-card-label">Monthly budget</div>
+                <div class="stat-card-value tabular-nums" id="statBudget">$0.00</div>
+              </div>
+            </div>
+          </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-    <script type="module" src="js/main.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(registration => {
-                        console.log('SW registered:', registration);
-                    })
-                    .catch(error => {
-                        console.log('SW registration failed:', error);
-                    });
-            });
-        }
-    </script>
+          <div class="charts-grid">
+            <div class="card chart-card category-chart">
+              <div class="chart-header">
+                <h3><i class="ri-pie-chart-line" aria-hidden="true"></i>Spending by category</h3>
+                <div class="segmented-icon-slot"></div>
+              </div>
+              <div class="chart-canvas-wrap">
+                <canvas id="categoryChart"></canvas>
+                <div class="chart-empty-state">
+                  <i class="ri-pie-chart-line" aria-hidden="true"></i>
+                  <p>Nothing to chart yet — add an expense to see it here.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card chart-card trend-chart">
+              <div class="chart-header">
+                <h3><i class="ri-line-chart-line" aria-hidden="true"></i>Income vs. expenses</h3>
+                <div class="segmented-icon-slot"></div>
+              </div>
+              <div class="chart-canvas-wrap">
+                <canvas id="trendChart"></canvas>
+                <div class="chart-empty-state">
+                  <i class="ri-line-chart-line" aria-hidden="true"></i>
+                  <p>Add a transaction to start your trend line.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== Transactions ===================== -->
+        <section id="transactions" class="view" aria-labelledby="transactionsTitle">
+          <div class="section-header">
+            <h1 id="transactionsTitle"><i class="ri-exchange-line" aria-hidden="true"></i>Activity</h1>
+            <button type="button" class="btn btn-primary btn-sm" id="addTransactionBtn">
+              <i class="ri-add-line" aria-hidden="true"></i><span>Add</span>
+            </button>
+          </div>
+
+          <div class="list-toolbar">
+            <div class="search-field">
+              <i class="ri-search-line" aria-hidden="true"></i>
+              <input type="search" id="searchInput" class="input" placeholder="Search transactions…"
+                aria-label="Search transactions">
+            </div>
+            <button type="button" class="icon-btn filter-trigger" id="filterTrigger" aria-label="Filter transactions">
+              <i class="ri-equalizer-line" aria-hidden="true"></i>
+              <span class="filter-dot" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <div id="transactionsList" class="transaction-list"></div>
+        </section>
+
+        <!-- ===================== Budgets ===================== -->
+        <section id="budgets" class="view" aria-labelledby="budgetsTitle">
+          <div class="section-header">
+            <h1 id="budgetsTitle"><i class="ri-pie-chart-2-line" aria-hidden="true"></i>Budgets</h1>
+            <button type="button" class="btn btn-primary btn-sm" id="addBudgetBtn">
+              <i class="ri-add-line" aria-hidden="true"></i><span>Add</span>
+            </button>
+          </div>
+
+          <div class="card overall-budget-card">
+            <div>
+              <div class="overall-budget-label">Total monthly budget</div>
+              <div class="overall-budget-value tabular-nums" id="overallBudgetValue">$0.00</div>
+            </div>
+            <div class="summary-icon is-info">
+              <i class="ri-calendar-line" aria-hidden="true"></i>
+            </div>
+          </div>
+
+          <div id="budgetsList" class="budget-list"></div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 
 </html>

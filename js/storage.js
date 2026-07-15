@@ -1,44 +1,32 @@
-// storage.js - Storage Management Module
+// storage.js — localStorage persistence, import/export.
+// Field names are kept identical to earlier versions of Budgie so existing
+// installs keep their data across this rebuild.
+
 import { state } from "./state.js";
 
-const STORAGE_VERSION = 4; // Incremented version for theme support
 const STORAGE_KEY = "budgetAppData";
+const STORAGE_VERSION = 5;
+
+const defaults = () => ({
+  transactions: [],
+  budgets: [],
+  darkMode: false,
+  chartType: "pie",
+  trendChartType: "line",
+  theme: "default",
+});
 
 export function loadFromStorage() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const data = JSON.parse(stored);
-      if (data.version !== STORAGE_VERSION) {
-        migrateData(data);
-      } else {
-        state.transactions = data.transactions || [];
-        state.budgets = data.budgets || [];
-        state.darkMode = data.darkMode || false;
-        state.chartType = data.chartType || "pie";
-        state.trendChartType = data.trendChartType || "line";
-        state.theme = data.theme || "default";
-      }
-    }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const data = raw ? JSON.parse(raw) : defaults();
+    const merged = { ...defaults(), ...data };
+    Object.assign(state, merged);
+    // currentMonth / currentView / categories aren't persisted fields
   } catch (e) {
     console.error("Failed to load data:", e);
-    state.transactions = [];
-    state.budgets = [];
-    state.darkMode = false;
-    state.chartType = "pie";
-    state.trendChartType = "line";
-    state.theme = "default";
+    Object.assign(state, defaults());
   }
-}
-
-function migrateData(data) {
-  state.transactions = data.transactions || [];
-  state.budgets = data.budgets || [];
-  state.darkMode = data.darkMode || false;
-  state.chartType = data.chartType || "pie";
-  state.trendChartType = data.trendChartType || "line";
-  state.theme = data.theme || "default";
-  saveToStorage();
 }
 
 export function saveToStorage() {
@@ -65,55 +53,16 @@ export function exportJSON() {
     budgets: state.budgets,
     exportDate: new Date().toISOString(),
   };
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `budget-data-${new Date().toISOString().split("T")[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(
+    JSON.stringify(data, null, 2),
+    "application/json",
+    `budgie-export-${todayStamp()}.json`
+  );
 }
 
 export function exportCSV() {
-  const transactionsCSV = generateTransactionsCSV();
-  const budgetsCSV = generateBudgetsCSV();
-  const csv = `TRANSACTIONS\n${transactionsCSV}\n\nBUDGETS\n${budgetsCSV}`;
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `budget-data-${new Date().toISOString().split("T")[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function generateTransactionsCSV() {
-  const headers = ["Date", "Type", "Category", "Amount", "Notes", "Recurring"];
-  const rows = state.transactions.map((t) => [
-    t.date,
-    t.type,
-    escapeCSV(t.category),
-    t.amount,
-    escapeCSV(t.notes || ""),
-    t.recurring ? "Yes" : "No",
-  ]);
-  return [headers, ...rows].map((row) => row.join(",")).join("\n");
-}
-
-function generateBudgetsCSV() {
-  const headers = ["Category", "Amount"];
-  const rows = state.budgets.map((b) => [escapeCSV(b.category), b.amount]);
-  return [headers, ...rows].map((row) => row.join(",")).join("\n");
-}
-
-function escapeCSV(str) {
-  if (typeof str !== "string") return str;
-  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
+  const csv = `TRANSACTIONS\n${transactionsToCSV()}\n\nBUDGETS\n${budgetsToCSV()}`;
+  downloadBlob(csv, "text/csv", `budgie-export-${todayStamp()}.csv`);
 }
 
 export function importJSON(file) {
@@ -122,17 +71,18 @@ export function importJSON(file) {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result);
-        if (!data.transactions || !Array.isArray(data.transactions)) {
+        if (!Array.isArray(data.transactions)) {
           throw new Error("Invalid data format");
         }
         state.transactions = data.transactions;
-        state.budgets = data.budgets || [];
+        state.budgets = Array.isArray(data.budgets) ? data.budgets : [];
         saveToStorage();
         resolve();
       } catch (error) {
         reject(error);
       }
     };
+    reader.onerror = () => reject(new Error("Could not read file"));
     reader.readAsText(file);
   });
 }
@@ -142,4 +92,45 @@ export function resetData() {
   state.budgets = [];
   state.categories.clear();
   saveToStorage();
+}
+
+// ---- helpers ----
+
+function transactionsToCSV() {
+  const headers = ["Date", "Type", "Category", "Amount", "Notes", "Recurring"];
+  const rows = state.transactions.map((t) => [
+    t.date,
+    t.type,
+    escapeCSV(t.category),
+    t.amount,
+    escapeCSV(t.notes || ""),
+    t.recurring ? "Yes" : "No",
+  ]);
+  return [headers, ...rows].map((r) => r.join(",")).join("\n");
+}
+
+function budgetsToCSV() {
+  const headers = ["Category", "Amount"];
+  const rows = state.budgets.map((b) => [escapeCSV(b.category), b.amount]);
+  return [headers, ...rows].map((r) => r.join(",")).join("\n");
+}
+
+function escapeCSV(value) {
+  if (typeof value !== "string") return value;
+  if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+function downloadBlob(content, type, filename) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function todayStamp() {
+  return new Date().toISOString().split("T")[0];
 }

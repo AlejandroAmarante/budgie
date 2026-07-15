@@ -1,0 +1,408 @@
+/*
+  pages.css
+  Layout specific to each of the three main views. Component styling itself
+  lives in components.css — this file only arranges components on the page.
+*/
+
+/* ============ Dashboard ============ */
+.month-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  touch-action: pan-y;
+}
+
+.month-switcher h2 {
+  min-width: 168px;
+  text-align: center;
+  font-size: var(--text-lg);
+}
+
+.stat-scroller {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+.stat-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.stat-card.income .stat-card-icon {
+  color: var(--color-income);
+  background: var(--color-income-soft);
+}
+
+.stat-card.expense .stat-card-icon {
+  color: var(--color-expense);
+  background: var(--color-expense-soft);
+}
+
+.stat-card.balance .stat-card-icon {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.stat-card.budget .stat-card-icon {
+  color: var(--color-info);
+  background: var(--color-info-soft);
+}
+
+.stat-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stat-card-label {
+  font-size: var(--text-xs);
+  line-height: 1.3;
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-card-value {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  line-height: 1.15;
+  font-weight: var(--weight-bold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.charts-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.chart-card .chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.chart-card h3 {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chart-card h3 i {
+  color: var(--color-primary);
+  font-size: 1.1em;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  height: 240px;
+}
+
+.chart-empty-state {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 200px;
+  color: var(--color-text-secondary);
+  gap: var(--space-2);
+}
+
+.chart-empty-state i {
+  font-size: 2rem;
+  color: var(--color-text-faint);
+}
+
+@media (min-width: 768px) {
+  .stat-scroller {
+    grid-template-columns: repeat(4, 1fr);
+    margin-bottom: var(--space-6);
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ============ Transactions ============ */
+.list-toolbar {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.search-field {
+  position: relative;
+  flex: 1;
+}
+
+.search-field i {
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-faint);
+}
+
+.search-field input {
+  padding-left: calc(var(--space-4) + 22px);
+}
+
+.filter-trigger {
+  position: relative;
+  flex-shrink: 0;
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  width: 48px;
+  height: 48px;
+}
+
+.filter-trigger.has-filters {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.filter-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  display: none;
+}
+
+.filter-trigger.has-filters .filter-dot {
+  display: block;
+}
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.transaction-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: left;
+  width: 100%;
+  transition: box-shadow var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.transaction-row:hover {
+  border-color: var(--color-primary);
+}
+
+.transaction-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.transaction-row.income .transaction-icon {
+  color: var(--color-income);
+  background: var(--color-income-soft);
+}
+
+.transaction-row.expense .transaction-icon {
+  color: var(--color-expense);
+  background: var(--color-expense-soft);
+}
+
+.transaction-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.transaction-category {
+  font-weight: var(--weight-semibold);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.transaction-meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transaction-amount {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-md);
+  flex-shrink: 0;
+}
+
+.transaction-row.income .transaction-amount {
+  color: var(--color-income);
+}
+
+.transaction-row.expense .transaction-amount {
+  color: var(--color-expense);
+}
+
+.transaction-actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* ============ Budgets ============ */
+.overall-budget-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.overall-budget-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+  margin-bottom: 2px;
+}
+
+.overall-budget-value {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+}
+
+.budget-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.budget-card {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.budget-card-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.budget-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.budget-card-title {
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-md);
+}
+
+.budget-card-amount {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.budget-card-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  margin-top: var(--space-2);
+}
+
+.budget-card-remaining {
+  font-weight: var(--weight-semibold);
+}
+
+.budget-card-remaining.is-positive {
+  color: var(--color-income);
+}
+
+.budget-card-remaining.is-negative {
+  color: var(--color-expense);
+}
+
+.budget-card-actions {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  justify-content: flex-end;
+}
+
+@media (min-width: 768px) {
+  .budget-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .budget-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* When a list is empty, its placeholder message should span and center
+   across the full row instead of being squeezed into a single grid cell. */
+.budget-list .empty-state,
+.transaction-list .empty-state {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+/* ============ Filter sheet contents ============ */
+.filter-group {
+  margin-bottom: var(--space-5);
+}
+
+.filter-group-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-3);
+}

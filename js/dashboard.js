@@ -1,133 +1,85 @@
-// dashboard.js - Dashboard Rendering Module
-import {
-  state,
-  getTransactionsForMonth,
-  calculateOverallBudget,
-} from "./state.js";
-import { formatCurrency, escapeHtml } from "./ui.js";
+// dashboard.js — the at-a-glance overview: month switcher, summary stats,
+// budget warnings, and the two charts (rendered by charts.js).
+
+import { state, getTransactionsForMonth, calculateOverallBudget, monthKey } from "./state.js";
+import { formatCurrency, escapeHtml, qs } from "./utils.js";
 import { renderCategoryChart, renderTrendChart } from "./charts.js";
 
 export function renderDashboard() {
-  const monthYear = state.currentMonth.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-  document.getElementById("currentMonth").textContent = monthYear;
+  const monthLabel = state.currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  qs("#currentMonthLabel").textContent = monthLabel;
 
   const monthTransactions = getTransactionsForMonth(state.currentMonth);
+  const isFuture = monthKey(state.currentMonth) > monthKey(new Date());
 
-  // Determine if viewing a future month
-  const now = new Date();
-  const currentYearMonth = `${now.getFullYear()}-${String(
-    now.getMonth() + 1
-  ).padStart(2, "0")}`;
-  const viewingYearMonth = `${state.currentMonth.getFullYear()}-${String(
-    state.currentMonth.getMonth() + 1
-  ).padStart(2, "0")}`;
-  const isFuture = viewingYearMonth > currentYearMonth;
-
-  // Calculate totals including projected transactions
-  const totalIncome = monthTransactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = monthTransactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = sumByType(monthTransactions, "income");
+  const totalExpenses = sumByType(monthTransactions, "expense");
   const balance = totalIncome - totalExpenses;
-
-  // Update labels based on whether we're viewing future or current/past
-  const incomeLabel = document.querySelector(
-    ".card-content.income .card-label"
-  );
-  const expensesLabel = document.querySelector(
-    ".card-content.expense .card-label"
-  );
-  const balanceLabel = document.querySelector(
-    ".card-content.balance .card-label"
-  );
-
-  if (isFuture) {
-    incomeLabel.textContent = "Projected Income";
-    expensesLabel.textContent = "Projected Expenses";
-    balanceLabel.textContent = "Projected Balance";
-  } else {
-    incomeLabel.textContent = "Total Income";
-    expensesLabel.textContent = "Total Expenses";
-    balanceLabel.textContent = "Balance";
-  }
-
-  document.getElementById("totalIncome").textContent =
-    formatCurrency(totalIncome);
-  document.getElementById("totalExpenses").textContent =
-    formatCurrency(totalExpenses);
-  document.getElementById("balance").textContent = formatCurrency(balance);
-
-  // Update budget display with calculated total
   const overallBudget = calculateOverallBudget();
-  document.getElementById("budget").textContent = formatCurrency(overallBudget);
 
-  // Filter out projected transactions for budget warnings (only warn on actual spending)
-  const actualTransactions = monthTransactions.filter((t) => !t.isProjected);
-  renderBudgetWarnings(actualTransactions);
+  qs("#incomeLabel").textContent = isFuture ? "Projected income" : "Income";
+  qs("#expenseLabel").textContent = isFuture ? "Projected expenses" : "Expenses";
+  qs("#balanceLabel").textContent = isFuture ? "Projected balance" : "Balance";
 
+  qs("#statIncome").textContent = formatCurrency(totalIncome);
+  qs("#statExpenses").textContent = formatCurrency(totalExpenses);
+  qs("#statBalance").textContent = formatCurrency(balance);
+  qs("#statBudget").textContent = formatCurrency(overallBudget);
+
+  renderBudgetWarnings(monthTransactions.filter((t) => !t.isProjected), overallBudget);
   renderCategoryChart(monthTransactions);
   renderTrendChart();
 }
 
 export function changeMonth(direction) {
-  const newDate = new Date(state.currentMonth);
-  newDate.setMonth(newDate.getMonth() + direction);
-  state.currentMonth = newDate;
+  const next = new Date(state.currentMonth);
+  next.setMonth(next.getMonth() + direction);
+  state.currentMonth = next;
   renderDashboard();
 }
 
-function renderBudgetWarnings(monthTransactions) {
-  const container = document.getElementById("budgetWarnings");
-  container.innerHTML = "";
-
-  const expenses = monthTransactions.filter((t) => t.type === "expense");
-  const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
-
-  const overallBudget = calculateOverallBudget();
-  if (overallBudget > 0 && totalExpenses > overallBudget) {
-    const warning = createWarningElement(
-      "Overall Budget Exceeded",
-      `You've spent ${formatCurrency(totalExpenses)} of your ${formatCurrency(
-        overallBudget
-      )} budget.`
-    );
-    container.appendChild(warning);
-  }
-
-  const categoryExpenses = {};
-  expenses.forEach((t) => {
-    categoryExpenses[t.category] =
-      (categoryExpenses[t.category] || 0) + t.amount;
-  });
-
-  state.budgets.forEach((budget) => {
-    const spent = categoryExpenses[budget.category] || 0;
-    if (spent > budget.amount) {
-      const warning = createWarningElement(
-        `${budget.category} Budget Exceeded`,
-        `You've spent ${formatCurrency(spent)} of your ${formatCurrency(
-          budget.amount
-        )} budget.`
-      );
-      container.appendChild(warning);
-    }
-  });
+function sumByType(transactions, type) {
+  return transactions.filter((t) => t.type === type).reduce((sum, t) => sum + t.amount, 0);
 }
 
-function createWarningElement(title, text) {
-  const div = document.createElement("div");
-  div.className = "warning";
-  div.innerHTML = `
-    <i class="ri-alert-line"></i>
-    <div class="warning-content">
-      <div class="warning-title">${escapeHtml(title)}</div>
-      <div class="warning-text">${escapeHtml(text)}</div>
-    </div>
-  `;
-  return div;
+function renderBudgetWarnings(transactions, overallBudget) {
+  const container = qs("#budgetWarnings");
+  if (!container) return;
+
+  const expenses = transactions.filter((t) => t.type === "expense");
+  const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
+  const spentByCategory = {};
+  expenses.forEach((t) => {
+    spentByCategory[t.category] = (spentByCategory[t.category] || 0) + t.amount;
+  });
+
+  const warnings = [];
+  if (overallBudget > 0 && totalExpenses > overallBudget) {
+    warnings.push({
+      title: "Overall budget exceeded",
+      text: `You've spent ${formatCurrency(totalExpenses)} of your ${formatCurrency(overallBudget)} budget.`,
+    });
+  }
+  state.budgets.forEach((budget) => {
+    const spent = spentByCategory[budget.category] || 0;
+    if (spent > budget.amount) {
+      warnings.push({
+        title: `${budget.category} budget exceeded`,
+        text: `You've spent ${formatCurrency(spent)} of your ${formatCurrency(budget.amount)} budget.`,
+      });
+    }
+  });
+
+  container.innerHTML = warnings
+    .map(
+      (w) => `
+      <div class="alert">
+        <i class="ri-alert-line" aria-hidden="true"></i>
+        <div>
+          <div class="alert-title">${escapeHtml(w.title)}</div>
+          <div class="alert-text">${escapeHtml(w.text)}</div>
+        </div>
+      </div>`
+    )
+    .join("");
 }

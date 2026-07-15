@@ -1,0 +1,258 @@
+/*
+  layout.css
+  The app shell: header, primary navigation, and content region.
+  Mobile-first: base rules target phones. Nav starts as a bottom bar and
+  is progressively enhanced into a left rail at wider viewports using the
+  exact same markup — no duplicate desktop/mobile nav trees.
+*/
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ---------- Header ---------- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: calc(var(--space-3) + var(--safe-top)) var(--space-4) var(--space-3);
+  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-lg);
+  color: var(--color-text);
+}
+
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.page-title {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* ---------- Main content ---------- */
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4)
+    calc(var(--nav-size-mobile) + var(--space-8) + var(--safe-bottom));
+}
+
+.view {
+  display: none;
+  animation: view-in var(--duration-base) var(--ease-standard);
+}
+
+.view.is-active {
+  display: block;
+}
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Primary navigation ---------- */
+.app-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-nav);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: calc(var(--nav-size-mobile) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: color-mix(in srgb, var(--color-bg-elevated) 92%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--color-border);
+}
+
+.nav-brand {
+  display: none;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 56px;
+  min-height: 48px;
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  color: var(--color-text-faint);
+  font-size: 0.6875rem;
+  font-weight: var(--weight-medium);
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.nav-item i {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.nav-item.is-active {
+  color: var(--color-primary);
+}
+
+.nav-item:active {
+  transform: scale(0.94);
+}
+
+/* The center "add transaction" action is visually distinct: a raised
+   circular accent button, always the fastest tap from either thumb. */
+.nav-fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-14px);
+  transition: transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.nav-fab i {
+  font-size: 1.6rem;
+}
+
+.nav-fab:active {
+  transform: translateY(-14px) scale(0.92);
+}
+
+/* ---------- Tablet ---------- */
+@media (min-width: 640px) {
+  .app-main {
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+}
+
+/* ---------- Desktop: nav becomes a left rail ---------- */
+@media (min-width: 1024px) {
+  #app {
+    flex-direction: row;
+  }
+
+  .app-header {
+    display: none;
+  }
+
+  .app-nav {
+    position: sticky;
+    top: 0;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 0;
+    width: var(--nav-size-desktop);
+    height: 100vh;
+    height: 100dvh;
+    padding: var(--space-6) 0 var(--space-4);
+    border-top: none;
+    border-right: 1px solid var(--color-border);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--color-bg-elevated);
+    overflow-y: auto;
+  }
+
+  .nav-brand {
+    order: -2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding-bottom: var(--space-5);
+    color: var(--color-primary);
+  }
+
+  .nav-brand svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .nav-item {
+    order: 0;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-height: 0;
+    border-radius: var(--radius-lg);
+  }
+
+  .nav-fab {
+    order: -1;
+    transform: none;
+    width: 52px;
+    height: 52px;
+    margin: var(--space-6) auto var(--space-6);
+  }
+
+  .nav-fab:active {
+    transform: scale(0.92);
+  }
+
+  .app-main {
+    max-width: none;
+    padding: var(--space-8) var(--space-10);
+  }
+
+  .app-main > .view-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+}
+
+@media (min-width: 1024px) and (pointer: fine) {
+  .nav-item:hover {
+    color: var(--color-primary);
+    background: var(--color-primary-soft);
+  }
+}
