@@ -2,11 +2,29 @@
 // from dashboard.js since chart configuration is a large, self-contained
 // concern of its own.
 
-import { state, getTransactionsForMonth, calculateOverallBudget, monthKey } from "./state.js";
-import { formatCurrency, generateColors, cssVar } from "./utils.js";
+import {
+  state,
+  getTransactionsForPeriod,
+  calculateOverallBudget,
+  monthKey,
+} from "./state.js";
+import {
+  formatCurrency,
+  generateColors,
+  cssVar,
+  startOfMonth,
+  endOfMonth,
+} from "./utils.js";
 import { saveToStorage } from "./storage.js";
 
 const charts = { category: null, trend: null };
+
+function monthTransactions(date) {
+  return getTransactionsForPeriod({
+    start: startOfMonth(date),
+    end: endOfMonth(date),
+  });
+}
 
 export function renderCategoryChart(monthTransactions) {
   const canvas = document.getElementById("categoryChart");
@@ -16,7 +34,9 @@ export function renderCategoryChart(monthTransactions) {
   const totals = {};
   monthTransactions
     .filter((t) => t.type === "expense")
-    .forEach((t) => (totals[t.category] = (totals[t.category] || 0) + t.amount));
+    .forEach(
+      (t) => (totals[t.category] = (totals[t.category] || 0) + t.amount),
+    );
 
   const labels = Object.keys(totals).sort();
   const data = labels.map((cat) => totals[cat]);
@@ -25,7 +45,13 @@ export function renderCategoryChart(monthTransactions) {
   charts.category = null;
 
   const hasAnyExpenses = state.transactions.some((t) => t.type === "expense");
-  toggleChartEmptyState(wrap, canvas, emptyState, hasAnyExpenses, "categoryChartToggle");
+  toggleChartEmptyState(
+    wrap,
+    canvas,
+    emptyState,
+    hasAnyExpenses,
+    "categoryChartToggle",
+  );
 
   if (!hasAnyExpenses || labels.length === 0) return;
 
@@ -53,7 +79,16 @@ export function renderCategoryChart(monthTransactions) {
 
   charts.category = new Chart(canvas, {
     type: state.chartType,
-    data: { labels, datasets: [{ data, backgroundColor: generateColors(labels.length), borderWidth: 0 }] },
+    data: {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: generateColors(labels.length),
+          borderWidth: 0,
+        },
+      ],
+    },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -61,11 +96,17 @@ export function renderCategoryChart(monthTransactions) {
       plugins: {
         legend: {
           position: "bottom",
-          labels: { color: cssVar("--color-text"), font: { family: "Inter" }, padding: 14, boxWidth: 10 },
+          labels: {
+            color: cssVar("--color-text"),
+            font: { family: "Inter" },
+            padding: 14,
+            boxWidth: 10,
+          },
         },
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.parsed)} (${((ctx.parsed / total) * 100).toFixed(1)}%)`,
+            label: (ctx) =>
+              `${ctx.label}: ${formatCurrency(ctx.parsed)} (${((ctx.parsed / total) * 100).toFixed(1)}%)`,
           },
         },
       },
@@ -76,7 +117,9 @@ export function renderCategoryChart(monthTransactions) {
 
 export function initCategoryChartToggle() {
   const chartCard = document.querySelector(".chart-card.category-chart");
-  const container = chartCard.querySelector(".chart-header .segmented-icon-slot");
+  const container = chartCard.querySelector(
+    ".chart-header .segmented-icon-slot",
+  );
   if (container.dataset.mounted) return;
   container.dataset.mounted = "true";
 
@@ -95,8 +138,10 @@ export function initCategoryChartToggle() {
       if (btn.dataset.type === state.chartType) return;
       state.chartType = btn.dataset.type;
       saveToStorage();
-      container.querySelectorAll("button").forEach((b) => b.classList.toggle("is-active", b === btn));
-      renderCategoryChart(getTransactionsForMonth(state.currentMonth));
+      container
+        .querySelectorAll("button")
+        .forEach((b) => b.classList.toggle("is-active", b === btn));
+      renderCategoryChart(getTransactionsForPeriod(state.period));
     });
   });
 }
@@ -106,7 +151,9 @@ export function renderTrendChart() {
   const wrap = canvas.closest(".chart-canvas-wrap");
   const emptyState = wrap.querySelector(".chart-empty-state");
 
-  const hasAny = state.transactions.some((t) => t.type === "income" || t.type === "expense");
+  const hasAny = state.transactions.some(
+    (t) => t.type === "income" || t.type === "expense",
+  );
   charts.trend?.destroy();
   charts.trend = null;
   toggleChartEmptyState(wrap, canvas, emptyState, hasAny, "trendChartToggle");
@@ -115,16 +162,19 @@ export function renderTrendChart() {
   const currentYearMonth = monthKey(new Date());
   const monthsData = [];
   for (let i = 2; i >= -2; i--) {
-    const date = new Date(state.currentMonth);
+    const date = new Date(state.period.start);
     date.setMonth(date.getMonth() - i);
     const yearMonth = monthKey(date);
     const isFuture = yearMonth > currentYearMonth;
-    const transactions = getTransactionsForMonth(date);
+    const transactions = monthTransactions(date);
     const actual = transactions.filter((t) => !t.isProjected);
     const projected = transactions.filter((t) => t.isProjected);
 
     monthsData.push({
-      month: date.toLocaleDateString("en-US", { month: "short", year: "numeric" }),
+      month: date.toLocaleDateString("en-US", {
+        month: "short",
+        year: "numeric",
+      }),
       actualIncome: sum(actual, "income"),
       actualExpenses: sum(actual, "expense"),
       projectedIncome: isFuture ? sum(projected, "income") : 0,
@@ -134,13 +184,20 @@ export function renderTrendChart() {
   }
 
   const overallBudget = calculateOverallBudget();
-  const allValues = monthsData.flatMap((d) => [d.actualIncome, d.actualExpenses, d.projectedIncome, d.projectedExpenses]);
+  const allValues = monthsData.flatMap((d) => [
+    d.actualIncome,
+    d.actualExpenses,
+    d.projectedIncome,
+    d.projectedExpenses,
+  ]);
   if (overallBudget > 0) allValues.push(overallBudget);
   const suggestedMax = Math.max(...allValues, 0) * 1.25 || 100;
 
   const lastActualIndex = monthsData.findIndex((d) => d.isFuture) - 1;
   const hasActualData = lastActualIndex >= 0;
-  const hasFutureData = monthsData.some((d) => d.isFuture && (d.projectedIncome > 0 || d.projectedExpenses > 0));
+  const hasFutureData = monthsData.some(
+    (d) => d.isFuture && (d.projectedIncome > 0 || d.projectedExpenses > 0),
+  );
   const chartType = state.trendChartType;
   const datasets = [];
 
@@ -149,23 +206,93 @@ export function renderTrendChart() {
   const budgetColor = "rgb(61, 127, 228)";
 
   if (chartType === "bar") {
-    datasets.push(barDataset("Income", monthsData.map((d) => (d.isFuture ? null : d.actualIncome)), incomeColor));
-    datasets.push(barDataset("Expenses", monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)), expenseColor));
+    datasets.push(
+      barDataset(
+        "Income",
+        monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
+        incomeColor,
+      ),
+    );
+    datasets.push(
+      barDataset(
+        "Expenses",
+        monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
+        expenseColor,
+      ),
+    );
     if (hasFutureData) {
-      datasets.push(barDataset("Projected Income", monthsData.map((d) => (d.isFuture ? d.actualIncome + d.projectedIncome : null)), incomeColor, true));
-      datasets.push(barDataset("Projected Expenses", monthsData.map((d) => (d.isFuture ? d.actualExpenses + d.projectedExpenses : null)), expenseColor, true));
+      datasets.push(
+        barDataset(
+          "Projected Income",
+          monthsData.map((d) =>
+            d.isFuture ? d.actualIncome + d.projectedIncome : null,
+          ),
+          incomeColor,
+          true,
+        ),
+      );
+      datasets.push(
+        barDataset(
+          "Projected Expenses",
+          monthsData.map((d) =>
+            d.isFuture ? d.actualExpenses + d.projectedExpenses : null,
+          ),
+          expenseColor,
+          true,
+        ),
+      );
     }
   } else {
     if (hasFutureData) {
       datasets.push(
-        lineDataset("Projected Expenses", monthsData.map((d, idx) => (hasActualData && idx === lastActualIndex ? d.actualExpenses : d.isFuture ? d.actualExpenses + d.projectedExpenses : null)), expenseColor, true, 2)
+        lineDataset(
+          "Projected Expenses",
+          monthsData.map((d, idx) =>
+            hasActualData && idx === lastActualIndex
+              ? d.actualExpenses
+              : d.isFuture
+                ? d.actualExpenses + d.projectedExpenses
+                : null,
+          ),
+          expenseColor,
+          true,
+          2,
+        ),
       );
       datasets.push(
-        lineDataset("Projected Income", monthsData.map((d, idx) => (hasActualData && idx === lastActualIndex ? d.actualIncome : d.isFuture ? d.actualIncome + d.projectedIncome : null)), incomeColor, true, 1)
+        lineDataset(
+          "Projected Income",
+          monthsData.map((d, idx) =>
+            hasActualData && idx === lastActualIndex
+              ? d.actualIncome
+              : d.isFuture
+                ? d.actualIncome + d.projectedIncome
+                : null,
+          ),
+          incomeColor,
+          true,
+          1,
+        ),
       );
     }
-    datasets.push(lineDataset("Expenses", monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)), expenseColor, false, 4));
-    datasets.push(lineDataset("Income", monthsData.map((d) => (d.isFuture ? null : d.actualIncome)), incomeColor, false, 3));
+    datasets.push(
+      lineDataset(
+        "Expenses",
+        monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
+        expenseColor,
+        false,
+        4,
+      ),
+    );
+    datasets.push(
+      lineDataset(
+        "Income",
+        monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
+        incomeColor,
+        false,
+        3,
+      ),
+    );
   }
 
   if (overallBudget > 0) {
@@ -173,7 +300,8 @@ export function renderTrendChart() {
       label: "Monthly Budget",
       data: monthsData.map(() => overallBudget),
       borderColor: budgetColor,
-      backgroundColor: chartType === "bar" ? "rgba(61,127,228,0.2)" : "transparent",
+      backgroundColor:
+        chartType === "bar" ? "rgba(61,127,228,0.2)" : "transparent",
       borderDash: [8, 5],
       borderWidth: 2.5,
       tension: 0,
@@ -200,18 +328,22 @@ export function renderTrendChart() {
             padding: 14,
             boxWidth: 10,
             generateLabels: (chart) => {
-              const original = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+              const original =
+                Chart.defaults.plugins.legend.labels.generateLabels(chart);
               const order = ["Income", "Expenses", "Monthly Budget"];
               return original
                 .filter((l) => !l.text.includes("Projected"))
                 .sort((a, b) => order.indexOf(a.text) - order.indexOf(b.text))
-                .map((l) => (l.text === "Monthly Budget" ? { ...l, lineDash: [8, 5] } : l));
+                .map((l) =>
+                  l.text === "Monthly Budget" ? { ...l, lineDash: [8, 5] } : l,
+                );
             },
           },
         },
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? formatCurrency(ctx.parsed.y) : "—"}`,
+            label: (ctx) =>
+              `${ctx.dataset.label}: ${ctx.parsed.y !== null ? formatCurrency(ctx.parsed.y) : "—"}`,
           },
         },
       },
@@ -219,11 +351,19 @@ export function renderTrendChart() {
         y: {
           beginAtZero: true,
           suggestedMax,
-          ticks: { color: cssVar("--color-text-secondary"), callback: (v) => formatCurrency(v), font: { family: "Inter" } },
+          ticks: {
+            color: cssVar("--color-text-secondary"),
+            callback: (v) => formatCurrency(v),
+            font: { family: "Inter" },
+          },
           grid: { color: cssVar("--color-border") },
         },
         x: {
-          ticks: { color: cssVar("--color-text-secondary"), font: { family: "Inter" }, maxRotation: 0 },
+          ticks: {
+            color: cssVar("--color-text-secondary"),
+            font: { family: "Inter" },
+            maxRotation: 0,
+          },
           grid: { display: false },
         },
       },
@@ -233,7 +373,9 @@ export function renderTrendChart() {
 
 export function initTrendChartToggle() {
   const chartCard = document.querySelector(".chart-card.trend-chart");
-  const container = chartCard.querySelector(".chart-header .segmented-icon-slot");
+  const container = chartCard.querySelector(
+    ".chart-header .segmented-icon-slot",
+  );
   if (container.dataset.mounted) return;
   container.dataset.mounted = "true";
 
@@ -252,7 +394,9 @@ export function initTrendChartToggle() {
       if (btn.dataset.type === state.trendChartType) return;
       state.trendChartType = btn.dataset.type;
       saveToStorage();
-      container.querySelectorAll("button").forEach((b) => b.classList.toggle("is-active", b === btn));
+      container
+        .querySelectorAll("button")
+        .forEach((b) => b.classList.toggle("is-active", b === btn));
       renderTrendChart();
     });
   });
@@ -261,14 +405,18 @@ export function initTrendChartToggle() {
 // ---- helpers ----
 
 function sum(transactions, type) {
-  return transactions.filter((t) => t.type === type).reduce((s, t) => s + t.amount, 0);
+  return transactions
+    .filter((t) => t.type === type)
+    .reduce((s, t) => s + t.amount, 0);
 }
 
 function barDataset(label, data, color, projected = false) {
   return {
     label,
     data,
-    backgroundColor: projected ? color.replace("rgb", "rgba").replace(")", ",0.5)") : color,
+    backgroundColor: projected
+      ? color.replace("rgb", "rgba").replace(")", ",0.5)")
+      : color,
     borderColor: color,
     borderWidth: 1,
     borderDash: projected ? [5, 5] : undefined,

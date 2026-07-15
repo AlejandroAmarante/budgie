@@ -1,24 +1,37 @@
-// dashboard.js — the at-a-glance overview: month switcher, summary stats,
+// dashboard.js — the at-a-glance overview: period switcher, summary stats,
 // budget warnings, and the two charts (rendered by charts.js).
 
-import { state, getTransactionsForMonth, calculateOverallBudget, monthKey } from "./state.js";
-import { formatCurrency, escapeHtml, qs } from "./utils.js";
+import {
+  state,
+  getTransactionsForPeriod,
+  calculateOverallBudget,
+} from "./state.js";
+import {
+  formatCurrency,
+  escapeHtml,
+  qs,
+  startOfMonth,
+  endOfMonth,
+} from "./utils.js";
+import { stepPeriod, formatPeriodLabel } from "./period.js";
 import { renderCategoryChart, renderTrendChart } from "./charts.js";
 
 export function renderDashboard() {
-  const monthLabel = state.currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  qs("#currentMonthLabel").textContent = monthLabel;
+  const period = state.period;
+  qs("#currentMonthLabel").textContent = formatPeriodLabel(period);
 
-  const monthTransactions = getTransactionsForMonth(state.currentMonth);
-  const isFuture = monthKey(state.currentMonth) > monthKey(new Date());
+  const periodTransactions = getTransactionsForPeriod(period);
+  const isFuture = period.start > new Date();
 
-  const totalIncome = sumByType(monthTransactions, "income");
-  const totalExpenses = sumByType(monthTransactions, "expense");
+  const totalIncome = sumByType(periodTransactions, "income");
+  const totalExpenses = sumByType(periodTransactions, "expense");
   const balance = totalIncome - totalExpenses;
   const overallBudget = calculateOverallBudget();
 
   qs("#incomeLabel").textContent = isFuture ? "Projected income" : "Income";
-  qs("#expenseLabel").textContent = isFuture ? "Projected expenses" : "Expenses";
+  qs("#expenseLabel").textContent = isFuture
+    ? "Projected expenses"
+    : "Expenses";
   qs("#balanceLabel").textContent = isFuture ? "Projected balance" : "Balance";
 
   qs("#statIncome").textContent = formatCurrency(totalIncome);
@@ -26,20 +39,31 @@ export function renderDashboard() {
   qs("#statBalance").textContent = formatCurrency(balance);
   qs("#statBudget").textContent = formatCurrency(overallBudget);
 
-  renderBudgetWarnings(monthTransactions.filter((t) => !t.isProjected), overallBudget);
-  renderCategoryChart(monthTransactions);
+  // Budgets are inherently monthly limits, so warnings always compare
+  // against the calendar month the period starts in — even if you're
+  // viewing a single day, a year, or a custom range above.
+  const monthTransactions = getTransactionsForPeriod({
+    start: startOfMonth(period.start),
+    end: endOfMonth(period.start),
+  });
+  renderBudgetWarnings(
+    monthTransactions.filter((t) => !t.isProjected),
+    overallBudget,
+  );
+
+  renderCategoryChart(periodTransactions);
   renderTrendChart();
 }
 
-export function changeMonth(direction) {
-  const next = new Date(state.currentMonth);
-  next.setMonth(next.getMonth() + direction);
-  state.currentMonth = next;
+export function stepDashboardPeriod(direction) {
+  state.period = stepPeriod(state.period, direction);
   renderDashboard();
 }
 
 function sumByType(transactions, type) {
-  return transactions.filter((t) => t.type === type).reduce((sum, t) => sum + t.amount, 0);
+  return transactions
+    .filter((t) => t.type === type)
+    .reduce((sum, t) => sum + t.amount, 0);
 }
 
 function renderBudgetWarnings(transactions, overallBudget) {
@@ -79,7 +103,7 @@ function renderBudgetWarnings(transactions, overallBudget) {
           <div class="alert-title">${escapeHtml(w.title)}</div>
           <div class="alert-text">${escapeHtml(w.text)}</div>
         </div>
-      </div>`
+      </div>`,
     )
     .join("");
 }

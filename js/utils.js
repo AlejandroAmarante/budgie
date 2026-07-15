@@ -8,15 +8,56 @@ export function formatCurrency(amount) {
   }).format(amount);
 }
 
-export function formatDate(dateStr) {
-  // Parse "YYYY-MM-DD" as a local date, not UTC — avoids the classic
-  // off-by-one-day bug that shows up for anyone west of UTC.
+/** Parse a "YYYY-MM-DD" string as a local date, never UTC — avoids the
+ *  classic off-by-one-day bug that shows up for anyone west of UTC. */
+export function parseISODate(dateStr) {
   const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
+  return new Date(year, month - 1, day);
+}
+
+export function toISODate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export function toISOMonth(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export function formatDate(dateStr) {
+  return parseISODate(dateStr).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+}
+
+// ---- Period boundaries (local time, inclusive start/end of day) ----
+
+export function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export function endOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+}
+
+export function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+export function endOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+}
+
+export function startOfYear(date) {
+  return new Date(date.getFullYear(), 0, 1);
+}
+
+export function endOfYear(date) {
+  return new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999);
 }
 
 export function escapeHtml(text) {

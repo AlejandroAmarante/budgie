@@ -7,7 +7,8 @@ import { loadFromStorage } from "./storage.js";
 import { on, debounce } from "./utils.js";
 import { switchView } from "./nav.js";
 import { applyAppearance, openSettingsSheet } from "./settings.js";
-import { renderDashboard, changeMonth } from "./dashboard.js";
+import { renderDashboard, stepDashboardPeriod } from "./dashboard.js";
+import { openPeriodPicker } from "./period.js";
 import { initCategoryChartToggle, initTrendChartToggle } from "./charts.js";
 import {
   renderTransactionList,
@@ -16,7 +17,11 @@ import {
   setSearchFilter,
   openFilterSheet,
 } from "./transactions.js";
-import { renderBudgets, openBudgetForm, handleDeleteBudget } from "./budgets.js";
+import {
+  renderBudgets,
+  openBudgetForm,
+  handleDeleteBudget,
+} from "./budgets.js";
 
 const viewRenderers = {
   dashboard: renderDashboard,
@@ -57,44 +62,69 @@ function init() {
 }
 
 function setupNav() {
-  on(document.getElementById("appNav"), "click", ".nav-item[data-view]", (e, target) => {
-    const view = switchView(target.dataset.view);
-    viewRenderers[view]?.();
-  });
+  on(
+    document.getElementById("appNav"),
+    "click",
+    ".nav-item[data-view]",
+    (e, target) => {
+      const view = switchView(target.dataset.view);
+      viewRenderers[view]?.();
+    },
+  );
 
-  document.getElementById("quickAddBtn").addEventListener("click", () => openTransactionForm());
+  document
+    .getElementById("quickAddBtn")
+    .addEventListener("click", () => openTransactionForm());
 }
 
 function setupSettings() {
-  document.getElementById("settingsNavBtn")?.addEventListener("click", openSettingsSheet);
+  document
+    .getElementById("settingsNavBtn")
+    ?.addEventListener("click", openSettingsSheet);
 }
 
 function setupDashboard() {
-  document.getElementById("prevMonthBtn").addEventListener("click", () => changeMonth(-1));
-  document.getElementById("nextMonthBtn").addEventListener("click", () => changeMonth(1));
+  document
+    .getElementById("prevMonthBtn")
+    .addEventListener("click", () => stepDashboardPeriod(-1));
+  document
+    .getElementById("nextMonthBtn")
+    .addEventListener("click", () => stepDashboardPeriod(1));
+  document
+    .getElementById("periodTriggerBtn")
+    .addEventListener("click", openPeriodPicker);
 
-  // Simple horizontal swipe to change month, mirroring the arrow buttons.
+  // Simple horizontal swipe to step the period, mirroring the arrow buttons.
   const switcher = document.getElementById("monthSwitcher");
   let startX = null;
   switcher.addEventListener("pointerdown", (e) => (startX = e.clientX));
   switcher.addEventListener("pointerup", (e) => {
     if (startX === null) return;
     const delta = e.clientX - startX;
-    if (Math.abs(delta) > 60) changeMonth(delta > 0 ? -1 : 1);
+    if (Math.abs(delta) > 60) stepDashboardPeriod(delta > 0 ? -1 : 1);
     startX = null;
   });
 }
 
 function setupTransactions() {
   const searchInput = document.getElementById("searchInput");
-  searchInput.addEventListener("input", debounce((e) => setSearchFilter(e.target.value), 150));
+  searchInput.addEventListener(
+    "input",
+    debounce((e) => setSearchFilter(e.target.value), 150),
+  );
 
-  document.getElementById("filterTrigger").addEventListener("click", openFilterSheet);
-  document.getElementById("addTransactionBtn").addEventListener("click", () => openTransactionForm());
+  document
+    .getElementById("filterTrigger")
+    .addEventListener("click", openFilterSheet);
+  document
+    .getElementById("addTransactionBtn")
+    .addEventListener("click", () => openTransactionForm());
 }
 
 function setupBudgets() {
-  document.getElementById("addBudgetBtn").addEventListener("click", () => openBudgetForm());
+  document
+    .getElementById("addBudgetBtn")
+    .addEventListener("click", () => openBudgetForm());
 }
 
 /** Every button that acts on a specific record uses a data-action attribute

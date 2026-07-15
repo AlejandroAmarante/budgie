@@ -5,19 +5,30 @@ import {
   state,
   generateId,
   updateCategoriesSet,
-  getTransactionsForMonth,
+  getTransactionsForPeriod,
   calculateOverallBudget,
   notify,
 } from "./state.js";
 import { saveToStorage } from "./storage.js";
-import { formatCurrency, escapeHtml } from "./utils.js";
+import {
+  formatCurrency,
+  escapeHtml,
+  startOfMonth,
+  endOfMonth,
+} from "./utils.js";
 import { mountIconPicker, DEFAULT_ICON } from "./icons.js";
 import { mountCategoryPicker } from "./category-picker.js";
 import { openSheet, confirmDialog } from "./sheet.js";
 import { toast } from "./toast.js";
 
 export function renderBudgets() {
-  const monthTransactions = getTransactionsForMonth(state.currentMonth);
+  // Budgets are monthly limits, so spend is always tallied for the calendar
+  // month the dashboard's active period starts in — regardless of whether
+  // the dashboard itself is currently showing a day, year, or custom range.
+  const monthTransactions = getTransactionsForPeriod({
+    start: startOfMonth(state.period.start),
+    end: endOfMonth(state.period.start),
+  });
   const spentByCategory = {};
   monthTransactions
     .filter((t) => t.type === "expense")
