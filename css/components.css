@@ -272,6 +272,7 @@
 /* ============ Forms ============ */
 .field {
   margin-bottom: var(--space-5);
+  position: relative;
 }
 
 .field-label {
@@ -497,12 +498,25 @@ input[type="number"] {
   transition: none;
 }
 
+/* Wraps the handle + header together so swiping down to dismiss works
+   from a much larger area than just the tiny handle pill. */
+.sheet-drag-zone {
+  cursor: grab;
+  touch-action: none;
+}
+
+.sheet-drag-zone:active {
+  cursor: grabbing;
+}
+
+.sheet-drag-zone [data-sheet-close] {
+  cursor: pointer;
+}
+
 .sheet-handle {
   display: flex;
   justify-content: center;
   padding: var(--space-3) 0 var(--space-1);
-  cursor: grab;
-  touch-action: none;
 }
 
 .sheet-handle::before {
@@ -517,7 +531,7 @@ input[type="number"] {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-2) var(--space-5) var(--space-3);
+  padding: var(--space-2) var(--space-5) var(--space-4);
 }
 
 .sheet-header h2 {

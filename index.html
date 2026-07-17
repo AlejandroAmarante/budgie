@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/datepicker.css">
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Skip to content</a>
@@ -153,7 +154,7 @@
                 <canvas id="categoryChart"></canvas>
                 <div class="chart-empty-state">
                   <i class="ri-pie-chart-line" aria-hidden="true"></i>
-                  <p>Nothing to chart yet — add an expense to see it here.</p>
+                  <p class="chart-empty-message">Add a transaction to see data for this period.</p>
                 </div>
               </div>
             </div>
@@ -166,7 +167,7 @@
                 <canvas id="trendChart"></canvas>
                 <div class="chart-empty-state">
                   <i class="ri-line-chart-line" aria-hidden="true"></i>
-                  <p>Add a transaction to start your trend line.</p>
+                  <p class="chart-empty-message">Add a transaction to see data for this period.</p>
                 </div>
               </div>
             </div>
@@ -223,6 +224,8 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4/dist/plugins/monthSelect/index.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -4,7 +4,8 @@
 // This replaces the old pattern of manually chaining render calls after
 // every mutation site.
 
-import { startOfMonth, endOfMonth, toISODate, parseISODate } from "./utils.js";
+import { startOfMonth, endOfMonth, toISODate } from "./utils.js";
+import { occurrencesInRange } from "./recurrence.js";
 
 export const state = {
   transactions: [],
@@ -40,51 +41,30 @@ export function notify() {
 
 export function updateCategoriesSet() {
   state.categories.clear();
-  state.transactions.forEach(
-    (t) => t.category && state.categories.add(t.category),
-  );
+  state.transactions.forEach((t) => t.category && state.categories.add(t.category));
   state.budgets.forEach((b) => b.category && state.categories.add(b.category));
 }
 
 /**
  * Returns every transaction that falls within `period.start`..`period.end`
  * (inclusive), including "virtual" projected instances of recurring
- * transactions for any month the period overlaps, provided that month is
- * after the recurring transaction's own original month.
+ * transactions (daily/weekly/monthly/yearly) for every occurrence that
+ * lands inside the window.
  */
 export function getTransactionsForPeriod(period) {
   const { start, end } = period;
   const startStr = toISODate(start);
   const endStr = toISODate(end);
 
-  const actual = state.transactions.filter(
-    (t) => t.date >= startStr && t.date <= endStr,
-  );
+  const actual = state.transactions.filter((t) => t.date >= startStr && t.date <= endStr);
 
   const projected = [];
-  const recurring = state.transactions.filter((t) => t.recurring);
-  if (recurring.length) {
-    const cursor = startOfMonth(start);
-    const lastMonth = startOfMonth(end);
-    while (cursor <= lastMonth) {
-      const mStr = monthKey(cursor);
-      const projectedDateStr = `${mStr}-01`;
-      if (projectedDateStr >= startStr && projectedDateStr <= endStr) {
-        recurring.forEach((t) => {
-          if (t.date.startsWith(mStr)) return; // an actual entry already covers this month
-          const recurringMonthStart = startOfMonth(parseISODate(t.date));
-          if (cursor <= recurringMonthStart) return; // only project into later months
-          projected.push({
-            ...t,
-            id: `projected-${t.id}-${mStr}`,
-            date: projectedDateStr,
-            isProjected: true,
-          });
-        });
-      }
-      cursor.setMonth(cursor.getMonth() + 1);
-    }
-  }
+  state.transactions.forEach((t) => {
+    occurrencesInRange(t, start, end).forEach((occurrenceDate) => {
+      const dateStr = toISODate(occurrenceDate);
+      projected.push({ ...t, id: `projected-${t.id}-${dateStr}`, date: dateStr, isProjected: true });
+    });
+  });
 
   return [...actual, ...projected];
 }

@@ -12,11 +12,10 @@ import {
   startOfYear,
   endOfYear,
   toISODate,
-  toISOMonth,
-  parseISODate,
 } from "./utils.js";
 import { openSheet } from "./sheet.js";
 import { toast } from "./toast.js";
+import { mountDatePicker, mountMonthPicker, mountRangePicker } from "./datepicker.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -40,11 +39,7 @@ export function stepPeriod(period, direction) {
   if (granularity === "range") {
     const lengthDays = Math.round((end - start) / DAY_MS) + 1;
     const shiftMs = lengthDays * DAY_MS * direction;
-    return {
-      granularity,
-      start: new Date(start.getTime() + shiftMs),
-      end: new Date(end.getTime() + shiftMs),
-    };
+    return { granularity, start: new Date(start.getTime() + shiftMs), end: new Date(end.getTime() + shiftMs) };
   }
 
   const d = new Date(start);
@@ -56,11 +51,7 @@ export function formatPeriodLabel(period) {
   const { granularity, start, end } = period;
 
   if (granularity === "day") {
-    return start.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+    return start.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   }
   if (granularity === "year") {
     return String(start.getFullYear());
@@ -72,11 +63,7 @@ export function formatPeriodLabel(period) {
       day: "numeric",
       year: sameYear ? undefined : "numeric",
     });
-    const endLabel = end.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    const endLabel = end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     return `${startLabel} – ${endLabel}`;
   }
   return start.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -91,6 +78,13 @@ const GRANULARITIES = [
 
 export function openPeriodPicker() {
   let granularity = state.period.granularity;
+  let activePicker = null;
+  // Range mode's two dates arrive together via one flatpickr instance, so
+  // they're tracked here rather than re-read from an input at Apply time.
+  const rangeDraft = {
+    start: state.period.start,
+    end: state.period.granularity === "range" ? state.period.end : state.period.start,
+  };
 
   const container = document.createElement("div");
   container.innerHTML = `
@@ -101,7 +95,7 @@ export function openPeriodPicker() {
           (g) => `
           <button type="button" class="chip${g.id === granularity ? " is-selected" : ""}" data-granularity="${g.id}">
             <i class="${g.icon}" aria-hidden="true"></i>${g.label}
-          </button>`,
+          </button>`
         ).join("")}
       </div>
     </div>
@@ -111,11 +105,12 @@ export function openPeriodPicker() {
   const { body } = openSheet({
     title: "View period",
     content: container,
+    onDismiss: () => activePicker?.destroy(),
     actions: [
       {
         label: "Apply",
         onClick: (closeFn) => {
-          const period = readPeriodFromInputs(body, granularity);
+          const period = readPeriod(body, granularity, rangeDraft);
           if (!period) return;
           state.period = period;
           notify();
@@ -128,7 +123,10 @@ export function openPeriodPicker() {
   const inputArea = body.querySelector("#periodInputArea");
 
   function renderInputs() {
-    inputArea.innerHTML = inputsMarkup(granularity, state.period);
+    activePicker?.destroy();
+    activePicker = null;
+    inputArea.innerHTML = inputsMarkup(granularity);
+    activePicker = mountPicker(granularity, body, state.period, rangeDraft);
   }
   renderInputs();
 
@@ -136,62 +134,77 @@ export function openPeriodPicker() {
     const chip = e.target.closest(".chip");
     if (!chip) return;
     granularity = chip.dataset.granularity;
-    body
-      .querySelectorAll("#granularityChips .chip")
-      .forEach((c) => c.classList.toggle("is-selected", c === chip));
+    body.querySelectorAll("#granularityChips .chip").forEach((c) => c.classList.toggle("is-selected", c === chip));
     renderInputs();
   });
 }
 
-function inputsMarkup(granularity, currentPeriod) {
+function inputsMarkup(granularity) {
   if (granularity === "day") {
     return `
       <label class="field-label" for="periodDay">Date</label>
-      <input type="date" id="periodDay" class="input" value="${toISODate(currentPeriod.start)}">
+      <input type="text" id="periodDay" class="input" readonly>
     `;
   }
   if (granularity === "month") {
     return `
       <label class="field-label" for="periodMonth">Month</label>
-      <input type="month" id="periodMonth" class="input" value="${toISOMonth(currentPeriod.start)}">
+      <input type="text" id="periodMonth" class="input" readonly>
     `;
   }
   if (granularity === "year") {
     return `
       <label class="field-label" for="periodYear">Year</label>
-      <input type="number" id="periodYear" class="input" inputmode="numeric" min="2000" max="2100" value="${currentPeriod.start.getFullYear()}">
+      <input type="number" id="periodYear" class="input" inputmode="numeric" min="1900" max="2200" value="${state.period.start.getFullYear()}">
     `;
   }
   // range
-  const start = currentPeriod.start;
-  const end =
-    currentPeriod.granularity === "range"
-      ? currentPeriod.end
-      : currentPeriod.start;
   return `
-    <label class="field-label" for="periodRangeStart">From</label>
-    <input type="date" id="periodRangeStart" class="input" value="${toISODate(start)}" style="margin-bottom: var(--space-3)">
-    <label class="field-label" for="periodRangeEnd">To</label>
-    <input type="date" id="periodRangeEnd" class="input" value="${toISODate(end)}">
+    <label class="field-label" for="periodRange">Date range</label>
+    <input type="text" id="periodRange" class="input" readonly placeholder="Select a start and end date">
   `;
 }
 
-function readPeriodFromInputs(body, granularity) {
+function mountPicker(granularity, body, currentPeriod, rangeDraft) {
+  if (granularity === "day") {
+    return mountDatePicker(body.querySelector("#periodDay"), { value: toISODate(currentPeriod.start) });
+  }
+  if (granularity === "month") {
+    return mountMonthPicker(body.querySelector("#periodMonth"), {
+      value: `${currentPeriod.start.getFullYear()}-${String(currentPeriod.start.getMonth() + 1).padStart(2, "0")}`,
+    });
+  }
+  if (granularity === "year") {
+    return null; // plain number input, no calendar needed
+  }
+  // range
+  return mountRangePicker(body.querySelector("#periodRange"), {
+    start: rangeDraft.start,
+    end: rangeDraft.end,
+    onChange: (start, end) => {
+      rangeDraft.start = start;
+      rangeDraft.end = end;
+    },
+  });
+}
+
+function readPeriod(body, granularity, rangeDraft) {
   if (granularity === "day") {
     const val = body.querySelector("#periodDay").value;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) {
-      toast("Enter a valid date", { icon: "ri-error-warning-line" });
+      toast("Choose a date", { icon: "ri-error-warning-line" });
       return null;
     }
-    const d = parseISODate(val);
-    return { granularity, start: startOfDay(d), end: endOfDay(d) };
+    const [y, m, d] = val.split("-").map(Number);
+    const date = new Date(y, m - 1, d);
+    return { granularity, start: startOfDay(date), end: endOfDay(date) };
   }
 
   if (granularity === "month") {
     const val = body.querySelector("#periodMonth").value; // "YYYY-MM"
     const match = /^(\d{4})-(\d{2})$/.exec(val);
     if (!match) {
-      toast("Enter a valid month", { icon: "ri-error-warning-line" });
+      toast("Choose a month", { icon: "ri-error-warning-line" });
       return null;
     }
     const d = new Date(Number(match[1]), Number(match[2]) - 1, 1);
@@ -209,24 +222,13 @@ function readPeriodFromInputs(body, granularity) {
   }
 
   // range
-  const startVal = body.querySelector("#periodRangeStart").value;
-  const endVal = body.querySelector("#periodRangeEnd").value;
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(startVal) ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(endVal)
-  ) {
-    toast("Choose both a start and end date", {
-      icon: "ri-error-warning-line",
-    });
+  if (!rangeDraft.start || !rangeDraft.end) {
+    toast("Choose a start and end date", { icon: "ri-error-warning-line" });
     return null;
   }
-  const start = parseISODate(startVal);
-  const end = parseISODate(endVal);
-  if (start > end) {
-    toast("Start date must be before the end date", {
-      icon: "ri-error-warning-line",
-    });
+  if (rangeDraft.start > rangeDraft.end) {
+    toast("Start date must be before the end date", { icon: "ri-error-warning-line" });
     return null;
   }
-  return { granularity, start: startOfDay(start), end: endOfDay(end) };
+  return { granularity, start: startOfDay(rangeDraft.start), end: endOfDay(rangeDraft.end) };
 }

@@ -23,12 +23,14 @@ export function openSheet({ title, content, actions, small = false, onDismiss })
   backdrop.className = "sheet-backdrop";
   backdrop.innerHTML = `
     <div class="sheet${small ? " sheet-sm" : ""}" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-      <div class="sheet-handle" aria-hidden="true"></div>
-      <div class="sheet-header">
-        <h2 id="sheetTitle">${title}</h2>
-        <button type="button" class="icon-btn" data-sheet-close aria-label="Close">
-          <i class="ri-close-line" aria-hidden="true"></i>
-        </button>
+      <div class="sheet-drag-zone">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-header">
+          <h2 id="sheetTitle">${title}</h2>
+          <button type="button" class="icon-btn" data-sheet-close aria-label="Close">
+            <i class="ri-close-line" aria-hidden="true"></i>
+          </button>
+        </div>
       </div>
       <div class="sheet-body"></div>
     </div>
@@ -91,7 +93,7 @@ export function openSheet({ title, content, actions, small = false, onDismiss })
   }
   document.addEventListener("keydown", onKeydown);
 
-  setupDragToDismiss(sheetEl, backdrop.querySelector(".sheet-handle"), close);
+  setupDragToDismiss(sheetEl, backdrop.querySelector(".sheet-drag-zone"), close);
 
   // Focus the first useful field for keyboard/screen-reader users — prefer
   // a text input over a button so data entry can start immediately.
@@ -132,19 +134,20 @@ function qsFocusable(container) {
   ).filter((elm) => !elm.disabled && elm.offsetParent !== null);
 }
 
-function setupDragToDismiss(sheetEl, handle, close) {
+function setupDragToDismiss(sheetEl, dragZone, close) {
   let startY = 0;
   let currentY = 0;
   let dragging = false;
 
-  handle.addEventListener("pointerdown", (e) => {
+  dragZone.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("[data-sheet-close]")) return; // let the close button handle its own click
     dragging = true;
     startY = e.clientY;
     sheetEl.classList.add("is-dragging");
-    handle.setPointerCapture(e.pointerId);
+    dragZone.setPointerCapture(e.pointerId);
   });
 
-  handle.addEventListener("pointermove", (e) => {
+  dragZone.addEventListener("pointermove", (e) => {
     if (!dragging) return;
     currentY = Math.max(0, e.clientY - startY);
     sheetEl.style.transform = `translateY(${currentY}px)`;
@@ -155,14 +158,14 @@ function setupDragToDismiss(sheetEl, handle, close) {
     dragging = false;
     sheetEl.classList.remove("is-dragging");
     sheetEl.style.transform = "";
-    if (currentY > 120) {
+    if (currentY > 110) {
       close();
     }
     currentY = 0;
   }
 
-  handle.addEventListener("pointerup", endDrag);
-  handle.addEventListener("pointercancel", endDrag);
+  dragZone.addEventListener("pointerup", endDrag);
+  dragZone.addEventListener("pointercancel", endDrag);
 }
 
 /** Promise-based confirmation dialog, replacing window.confirm(). */

@@ -2,41 +2,32 @@
 // from dashboard.js since chart configuration is a large, self-contained
 // concern of its own.
 
-import {
-  state,
-  getTransactionsForPeriod,
-  calculateOverallBudget,
-  monthKey,
-} from "./state.js";
+import { state, getTransactionsForPeriod, calculateOverallBudget } from "./state.js";
 import {
   formatCurrency,
   generateColors,
   cssVar,
+  startOfDay,
+  endOfDay,
   startOfMonth,
   endOfMonth,
+  startOfYear,
+  endOfYear,
 } from "./utils.js";
 import { saveToStorage } from "./storage.js";
 
 const charts = { category: null, trend: null };
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-function monthTransactions(date) {
-  return getTransactionsForPeriod({
-    start: startOfMonth(date),
-    end: endOfMonth(date),
-  });
-}
-
-export function renderCategoryChart(monthTransactions) {
+export function renderCategoryChart(periodTransactions) {
   const canvas = document.getElementById("categoryChart");
   const wrap = canvas.closest(".chart-canvas-wrap");
   const emptyState = wrap.querySelector(".chart-empty-state");
 
   const totals = {};
-  monthTransactions
+  periodTransactions
     .filter((t) => t.type === "expense")
-    .forEach(
-      (t) => (totals[t.category] = (totals[t.category] || 0) + t.amount),
-    );
+    .forEach((t) => (totals[t.category] = (totals[t.category] || 0) + t.amount));
 
   const labels = Object.keys(totals).sort();
   const data = labels.map((cat) => totals[cat]);
@@ -44,16 +35,11 @@ export function renderCategoryChart(monthTransactions) {
   charts.category?.destroy();
   charts.category = null;
 
-  const hasAnyExpenses = state.transactions.some((t) => t.type === "expense");
-  toggleChartEmptyState(
-    wrap,
-    canvas,
-    emptyState,
-    hasAnyExpenses,
-    "categoryChartToggle",
-  );
+  const hasDataInPeriod = labels.length > 0;
+  const everHasExpenses = state.transactions.some((t) => t.type === "expense");
+  toggleChartEmptyState(wrap, canvas, emptyState, hasDataInPeriod, everHasExpenses, "categoryChartToggle");
 
-  if (!hasAnyExpenses || labels.length === 0) return;
+  if (!hasDataInPeriod) return;
 
   const total = data.reduce((sum, v) => sum + v, 0);
 
@@ -79,16 +65,7 @@ export function renderCategoryChart(monthTransactions) {
 
   charts.category = new Chart(canvas, {
     type: state.chartType,
-    data: {
-      labels,
-      datasets: [
-        {
-          data,
-          backgroundColor: generateColors(labels.length),
-          borderWidth: 0,
-        },
-      ],
-    },
+    data: { labels, datasets: [{ data, backgroundColor: generateColors(labels.length), borderWidth: 0 }] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -96,17 +73,11 @@ export function renderCategoryChart(monthTransactions) {
       plugins: {
         legend: {
           position: "bottom",
-          labels: {
-            color: cssVar("--color-text"),
-            font: { family: "Inter" },
-            padding: 14,
-            boxWidth: 10,
-          },
+          labels: { color: cssVar("--color-text"), font: { family: "Inter" }, padding: 14, boxWidth: 10 },
         },
         tooltip: {
           callbacks: {
-            label: (ctx) =>
-              `${ctx.label}: ${formatCurrency(ctx.parsed)} (${((ctx.parsed / total) * 100).toFixed(1)}%)`,
+            label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.parsed)} (${((ctx.parsed / total) * 100).toFixed(1)}%)`,
           },
         },
       },
@@ -117,9 +88,7 @@ export function renderCategoryChart(monthTransactions) {
 
 export function initCategoryChartToggle() {
   const chartCard = document.querySelector(".chart-card.category-chart");
-  const container = chartCard.querySelector(
-    ".chart-header .segmented-icon-slot",
-  );
+  const container = chartCard.querySelector(".chart-header .segmented-icon-slot");
   if (container.dataset.mounted) return;
   container.dataset.mounted = "true";
 
@@ -138,12 +107,64 @@ export function initCategoryChartToggle() {
       if (btn.dataset.type === state.chartType) return;
       state.chartType = btn.dataset.type;
       saveToStorage();
-      container
-        .querySelectorAll("button")
-        .forEach((b) => b.classList.toggle("is-active", b === btn));
+      container.querySelectorAll("button").forEach((b) => b.classList.toggle("is-active", b === btn));
       renderCategoryChart(getTransactionsForPeriod(state.period));
     });
   });
+}
+
+/**
+ * Builds the trend chart's x-axis buckets for the active period.
+ * Day/month/year granularities show 5 buckets of that same unit, centered
+ * on the selection (useful surrounding context). A custom range shows
+ * *only* that range — bucketed by day if it's a month or shorter, by
+ * month otherwise, since the person already chose those exact bounds.
+ */
+function buildTrendBuckets(period) {
+  const { granularity, start, end } = period;
+  const today = new Date();
+  const bucket = (label, bucketStart, bucketEnd) => ({
+    label,
+    start: bucketStart,
+    end: bucketEnd,
+    isFuture: bucketStart > today,
+  });
+
+  if (granularity === "range") {
+    const totalDays = Math.round((endOfDay(end) - startOfDay(start)) / DAY_MS) + 1;
+    const buckets = [];
+    if (totalDays <= 31) {
+      for (let i = 0; i < totalDays; i++) {
+        const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+        buckets.push(bucket(d.toLocaleDateString("en-US", { month: "short", day: "numeric" }), startOfDay(d), endOfDay(d)));
+      }
+    } else {
+      const cursor = startOfMonth(start);
+      const lastMonth = startOfMonth(end);
+      while (cursor <= lastMonth) {
+        buckets.push(
+          bucket(cursor.toLocaleDateString("en-US", { month: "short", year: "numeric" }), startOfMonth(cursor), endOfMonth(cursor))
+        );
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+    }
+    return buckets;
+  }
+
+  const buckets = [];
+  for (let i = -2; i <= 2; i++) {
+    if (granularity === "day") {
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      buckets.push(bucket(d.toLocaleDateString("en-US", { month: "short", day: "numeric" }), startOfDay(d), endOfDay(d)));
+    } else if (granularity === "year") {
+      const d = new Date(start.getFullYear() + i, 0, 1);
+      buckets.push(bucket(String(d.getFullYear()), startOfYear(d), endOfYear(d)));
+    } else {
+      const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+      buckets.push(bucket(d.toLocaleDateString("en-US", { month: "short", year: "numeric" }), startOfMonth(d), endOfMonth(d)));
+    }
+  }
+  return buckets;
 }
 
 export function renderTrendChart() {
@@ -151,53 +172,37 @@ export function renderTrendChart() {
   const wrap = canvas.closest(".chart-canvas-wrap");
   const emptyState = wrap.querySelector(".chart-empty-state");
 
-  const hasAny = state.transactions.some(
-    (t) => t.type === "income" || t.type === "expense",
-  );
-  charts.trend?.destroy();
-  charts.trend = null;
-  toggleChartEmptyState(wrap, canvas, emptyState, hasAny, "trendChartToggle");
-  if (!hasAny) return;
-
-  const currentYearMonth = monthKey(new Date());
-  const monthsData = [];
-  for (let i = 2; i >= -2; i--) {
-    const date = new Date(state.period.start);
-    date.setMonth(date.getMonth() - i);
-    const yearMonth = monthKey(date);
-    const isFuture = yearMonth > currentYearMonth;
-    const transactions = monthTransactions(date);
+  const buckets = buildTrendBuckets(state.period).map((b) => {
+    const transactions = getTransactionsForPeriod({ start: b.start, end: b.end });
     const actual = transactions.filter((t) => !t.isProjected);
     const projected = transactions.filter((t) => t.isProjected);
-
-    monthsData.push({
-      month: date.toLocaleDateString("en-US", {
-        month: "short",
-        year: "numeric",
-      }),
+    return {
+      ...b,
       actualIncome: sum(actual, "income"),
       actualExpenses: sum(actual, "expense"),
-      projectedIncome: isFuture ? sum(projected, "income") : 0,
-      projectedExpenses: isFuture ? sum(projected, "expense") : 0,
-      isFuture,
-    });
-  }
+      projectedIncome: b.isFuture ? sum(projected, "income") : 0,
+      projectedExpenses: b.isFuture ? sum(projected, "expense") : 0,
+    };
+  });
+
+  const hasDataInPeriod = buckets.some(
+    (b) => b.actualIncome || b.actualExpenses || b.projectedIncome || b.projectedExpenses
+  );
+  const everHasData = state.transactions.length > 0;
+
+  charts.trend?.destroy();
+  charts.trend = null;
+  toggleChartEmptyState(wrap, canvas, emptyState, hasDataInPeriod, everHasData, "trendChartToggle");
+  if (!hasDataInPeriod) return;
 
   const overallBudget = calculateOverallBudget();
-  const allValues = monthsData.flatMap((d) => [
-    d.actualIncome,
-    d.actualExpenses,
-    d.projectedIncome,
-    d.projectedExpenses,
-  ]);
+  const allValues = buckets.flatMap((d) => [d.actualIncome, d.actualExpenses, d.projectedIncome, d.projectedExpenses]);
   if (overallBudget > 0) allValues.push(overallBudget);
   const suggestedMax = Math.max(...allValues, 0) * 1.25 || 100;
 
-  const lastActualIndex = monthsData.findIndex((d) => d.isFuture) - 1;
+  const lastActualIndex = buckets.findIndex((d) => d.isFuture) - 1;
   const hasActualData = lastActualIndex >= 0;
-  const hasFutureData = monthsData.some(
-    (d) => d.isFuture && (d.projectedIncome > 0 || d.projectedExpenses > 0),
-  );
+  const hasFutureData = buckets.some((d) => d.isFuture && (d.projectedIncome > 0 || d.projectedExpenses > 0));
   const chartType = state.trendChartType;
   const datasets = [];
 
@@ -206,102 +211,31 @@ export function renderTrendChart() {
   const budgetColor = "rgb(61, 127, 228)";
 
   if (chartType === "bar") {
-    datasets.push(
-      barDataset(
-        "Income",
-        monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
-        incomeColor,
-      ),
-    );
-    datasets.push(
-      barDataset(
-        "Expenses",
-        monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
-        expenseColor,
-      ),
-    );
+    datasets.push(barDataset("Income", buckets.map((d) => (d.isFuture ? null : d.actualIncome)), incomeColor));
+    datasets.push(barDataset("Expenses", buckets.map((d) => (d.isFuture ? null : d.actualExpenses)), expenseColor));
     if (hasFutureData) {
-      datasets.push(
-        barDataset(
-          "Projected Income",
-          monthsData.map((d) =>
-            d.isFuture ? d.actualIncome + d.projectedIncome : null,
-          ),
-          incomeColor,
-          true,
-        ),
-      );
-      datasets.push(
-        barDataset(
-          "Projected Expenses",
-          monthsData.map((d) =>
-            d.isFuture ? d.actualExpenses + d.projectedExpenses : null,
-          ),
-          expenseColor,
-          true,
-        ),
-      );
+      datasets.push(barDataset("Projected Income", buckets.map((d) => (d.isFuture ? d.actualIncome + d.projectedIncome : null)), incomeColor, true));
+      datasets.push(barDataset("Projected Expenses", buckets.map((d) => (d.isFuture ? d.actualExpenses + d.projectedExpenses : null)), expenseColor, true));
     }
   } else {
     if (hasFutureData) {
       datasets.push(
-        lineDataset(
-          "Projected Expenses",
-          monthsData.map((d, idx) =>
-            hasActualData && idx === lastActualIndex
-              ? d.actualExpenses
-              : d.isFuture
-                ? d.actualExpenses + d.projectedExpenses
-                : null,
-          ),
-          expenseColor,
-          true,
-          2,
-        ),
+        lineDataset("Projected Expenses", buckets.map((d, idx) => (hasActualData && idx === lastActualIndex ? d.actualExpenses : d.isFuture ? d.actualExpenses + d.projectedExpenses : null)), expenseColor, true, 2)
       );
       datasets.push(
-        lineDataset(
-          "Projected Income",
-          monthsData.map((d, idx) =>
-            hasActualData && idx === lastActualIndex
-              ? d.actualIncome
-              : d.isFuture
-                ? d.actualIncome + d.projectedIncome
-                : null,
-          ),
-          incomeColor,
-          true,
-          1,
-        ),
+        lineDataset("Projected Income", buckets.map((d, idx) => (hasActualData && idx === lastActualIndex ? d.actualIncome : d.isFuture ? d.actualIncome + d.projectedIncome : null)), incomeColor, true, 1)
       );
     }
-    datasets.push(
-      lineDataset(
-        "Expenses",
-        monthsData.map((d) => (d.isFuture ? null : d.actualExpenses)),
-        expenseColor,
-        false,
-        4,
-      ),
-    );
-    datasets.push(
-      lineDataset(
-        "Income",
-        monthsData.map((d) => (d.isFuture ? null : d.actualIncome)),
-        incomeColor,
-        false,
-        3,
-      ),
-    );
+    datasets.push(lineDataset("Expenses", buckets.map((d) => (d.isFuture ? null : d.actualExpenses)), expenseColor, false, 4));
+    datasets.push(lineDataset("Income", buckets.map((d) => (d.isFuture ? null : d.actualIncome)), incomeColor, false, 3));
   }
 
   if (overallBudget > 0) {
     datasets.push({
       label: "Monthly Budget",
-      data: monthsData.map(() => overallBudget),
+      data: buckets.map(() => overallBudget),
       borderColor: budgetColor,
-      backgroundColor:
-        chartType === "bar" ? "rgba(61,127,228,0.2)" : "transparent",
+      backgroundColor: chartType === "bar" ? "rgba(61,127,228,0.2)" : "transparent",
       borderDash: [8, 5],
       borderWidth: 2.5,
       tension: 0,
@@ -314,7 +248,7 @@ export function renderTrendChart() {
 
   charts.trend = new Chart(canvas, {
     type: chartType,
-    data: { labels: monthsData.map((d) => d.month), datasets },
+    data: { labels: buckets.map((d) => d.label), datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -328,22 +262,18 @@ export function renderTrendChart() {
             padding: 14,
             boxWidth: 10,
             generateLabels: (chart) => {
-              const original =
-                Chart.defaults.plugins.legend.labels.generateLabels(chart);
+              const original = Chart.defaults.plugins.legend.labels.generateLabels(chart);
               const order = ["Income", "Expenses", "Monthly Budget"];
               return original
                 .filter((l) => !l.text.includes("Projected"))
                 .sort((a, b) => order.indexOf(a.text) - order.indexOf(b.text))
-                .map((l) =>
-                  l.text === "Monthly Budget" ? { ...l, lineDash: [8, 5] } : l,
-                );
+                .map((l) => (l.text === "Monthly Budget" ? { ...l, lineDash: [8, 5] } : l));
             },
           },
         },
         tooltip: {
           callbacks: {
-            label: (ctx) =>
-              `${ctx.dataset.label}: ${ctx.parsed.y !== null ? formatCurrency(ctx.parsed.y) : "—"}`,
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? formatCurrency(ctx.parsed.y) : "—"}`,
           },
         },
       },
@@ -351,19 +281,11 @@ export function renderTrendChart() {
         y: {
           beginAtZero: true,
           suggestedMax,
-          ticks: {
-            color: cssVar("--color-text-secondary"),
-            callback: (v) => formatCurrency(v),
-            font: { family: "Inter" },
-          },
+          ticks: { color: cssVar("--color-text-secondary"), callback: (v) => formatCurrency(v), font: { family: "Inter" } },
           grid: { color: cssVar("--color-border") },
         },
         x: {
-          ticks: {
-            color: cssVar("--color-text-secondary"),
-            font: { family: "Inter" },
-            maxRotation: 0,
-          },
+          ticks: { color: cssVar("--color-text-secondary"), font: { family: "Inter" }, maxRotation: 0 },
           grid: { display: false },
         },
       },
@@ -373,9 +295,7 @@ export function renderTrendChart() {
 
 export function initTrendChartToggle() {
   const chartCard = document.querySelector(".chart-card.trend-chart");
-  const container = chartCard.querySelector(
-    ".chart-header .segmented-icon-slot",
-  );
+  const container = chartCard.querySelector(".chart-header .segmented-icon-slot");
   if (container.dataset.mounted) return;
   container.dataset.mounted = "true";
 
@@ -394,9 +314,7 @@ export function initTrendChartToggle() {
       if (btn.dataset.type === state.trendChartType) return;
       state.trendChartType = btn.dataset.type;
       saveToStorage();
-      container
-        .querySelectorAll("button")
-        .forEach((b) => b.classList.toggle("is-active", b === btn));
+      container.querySelectorAll("button").forEach((b) => b.classList.toggle("is-active", b === btn));
       renderTrendChart();
     });
   });
@@ -405,18 +323,14 @@ export function initTrendChartToggle() {
 // ---- helpers ----
 
 function sum(transactions, type) {
-  return transactions
-    .filter((t) => t.type === type)
-    .reduce((s, t) => s + t.amount, 0);
+  return transactions.filter((t) => t.type === type).reduce((s, t) => s + t.amount, 0);
 }
 
 function barDataset(label, data, color, projected = false) {
   return {
     label,
     data,
-    backgroundColor: projected
-      ? color.replace("rgb", "rgba").replace(")", ",0.5)")
-      : color,
+    backgroundColor: projected ? color.replace("rgb", "rgba").replace(")", ",0.5)") : color,
     borderColor: color,
     borderWidth: 1,
     borderDash: projected ? [5, 5] : undefined,
@@ -443,9 +357,17 @@ function lineDataset(label, data, color, projected, order) {
   };
 }
 
-function toggleChartEmptyState(wrap, canvas, emptyState, hasData, toggleId) {
+function toggleChartEmptyState(wrap, canvas, emptyState, hasData, everHasData, toggleId) {
   const toggle = document.getElementById(toggleId);
   canvas.style.display = hasData ? "block" : "none";
-  if (emptyState) emptyState.style.display = hasData ? "none" : "flex";
+  if (emptyState) {
+    emptyState.style.display = hasData ? "none" : "flex";
+    const message = emptyState.querySelector(".chart-empty-message");
+    if (message && !hasData) {
+      message.textContent = everHasData
+        ? "Try selecting a different date range."
+        : "Add a transaction to see data for this period.";
+    }
+  }
   if (toggle) toggle.style.visibility = hasData ? "visible" : "hidden";
 }

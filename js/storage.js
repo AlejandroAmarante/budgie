@@ -5,7 +5,7 @@
 import { state } from "./state.js";
 
 const STORAGE_KEY = "budgetAppData";
-const STORAGE_VERSION = 5;
+const STORAGE_VERSION = 6;
 
 const defaults = () => ({
   transactions: [],
@@ -16,13 +16,26 @@ const defaults = () => ({
   theme: "default",
 });
 
+/** Transactions used to have a boolean `recurring` flag (always monthly).
+ *  Newer versions use a `recurrence` string ("none"|"daily"|"weekly"|
+ *  "monthly"|"yearly"). Convert on load so existing installs don't lose
+ *  their recurring transactions. */
+function migrateTransactions(transactions) {
+  return transactions.map((t) => {
+    if (t.recurrence) return t;
+    const { recurring, ...rest } = t;
+    return { ...rest, recurrence: recurring ? "monthly" : "none" };
+  });
+}
+
 export function loadFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const data = raw ? JSON.parse(raw) : defaults();
     const merged = { ...defaults(), ...data };
+    merged.transactions = migrateTransactions(merged.transactions);
     Object.assign(state, merged);
-    // currentMonth / currentView / categories aren't persisted fields
+    // period / currentView / categories aren't persisted fields
   } catch (e) {
     console.error("Failed to load data:", e);
     Object.assign(state, defaults());
@@ -74,7 +87,7 @@ export function importJSON(file) {
         if (!Array.isArray(data.transactions)) {
           throw new Error("Invalid data format");
         }
-        state.transactions = data.transactions;
+        state.transactions = migrateTransactions(data.transactions);
         state.budgets = Array.isArray(data.budgets) ? data.budgets : [];
         saveToStorage();
         resolve();
@@ -97,14 +110,14 @@ export function resetData() {
 // ---- helpers ----
 
 function transactionsToCSV() {
-  const headers = ["Date", "Type", "Category", "Amount", "Notes", "Recurring"];
+  const headers = ["Date", "Type", "Category", "Amount", "Notes", "Recurrence"];
   const rows = state.transactions.map((t) => [
     t.date,
     t.type,
     escapeCSV(t.category),
     t.amount,
     escapeCSV(t.notes || ""),
-    t.recurring ? "Yes" : "No",
+    t.recurrence && t.recurrence !== "none" ? t.recurrence : "None",
   ]);
   return [headers, ...rows].map((r) => r.join(",")).join("\n");
 }

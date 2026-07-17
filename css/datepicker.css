@@ -1,0 +1,271 @@
+/*
+  datepicker.css
+  A complete custom theme for Flatpickr, built entirely from Budgie's own
+  design tokens. We intentionally never load flatpickr's bundled CSS —
+  this file styles its semantic class names directly so the calendar
+  looks native to Budgie (and automatically follows dark mode / every
+  color theme, since it only ever references our CSS custom properties).
+*/
+
+.flatpickr-calendar {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-4);
+  margin-top: var(--space-2);
+  width: auto !important;
+  font-family: var(--font-body);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.flatpickr-calendar.open {
+  opacity: 1;
+  visibility: visible;
+  z-index: 5;
+}
+
+.flatpickr-calendar.arrowTop::before,
+.flatpickr-calendar.arrowTop::after,
+.flatpickr-calendar.arrowBottom::before,
+.flatpickr-calendar.arrowBottom::after {
+  display: none;
+}
+
+/* ---------- Header: month/year navigation ---------- */
+.flatpickr-months {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.flatpickr-month {
+  color: var(--color-text);
+  flex: 1;
+}
+
+.flatpickr-current-month {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-md);
+  color: var(--color-text);
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+  border: none;
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  cursor: pointer;
+}
+
+.numInputWrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  width: auto;
+}
+
+.numInputWrapper .cur-year {
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-sm);
+  border: none;
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  padding: var(--space-1) var(--space-2);
+  width: 4.2em;
+  text-align: center;
+}
+
+.numInputWrapper span.arrowUp,
+.numInputWrapper span.arrowDown {
+  display: none;
+}
+
+.flatpickr-prev-month,
+.flatpickr-next-month {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+}
+
+.flatpickr-prev-month svg,
+.flatpickr-next-month svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* ---------- Weekday header ---------- */
+.flatpickr-weekdays {
+  margin-bottom: var(--space-2);
+}
+
+.flatpickr-weekdaycontainer {
+  display: flex;
+  width: 100%;
+}
+
+.flatpickr-weekday {
+  flex: 1;
+  text-align: center;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-faint);
+  text-transform: uppercase;
+}
+
+/* ---------- Day grid ---------- */
+.flatpickr-days {
+  display: flex;
+}
+
+.dayContainer {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  width: 100% !important;
+  min-width: 252px !important;
+}
+
+.flatpickr-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  max-width: none;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+
+.flatpickr-day:hover {
+  background: var(--color-bg-subtle);
+}
+
+.flatpickr-day.today {
+  border-color: var(--color-primary);
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover {
+  background: var(--color-primary-strong);
+}
+
+.flatpickr-day.inRange {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  border-radius: 0;
+  box-shadow: -5px 0 0 var(--color-primary-soft), 5px 0 0 var(--color-primary-soft);
+}
+
+.flatpickr-day.startRange {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.flatpickr-day.endRange {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.flatpickr-day.startRange.endRange {
+  border-radius: var(--radius-md);
+}
+
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+  color: var(--color-text-faint);
+}
+
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.notAllowed {
+  color: var(--color-text-faint);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.flatpickr-day.flatpickr-disabled:hover {
+  background: none;
+}
+
+/* ---------- Month-select plugin (granularity = month) ---------- */
+.flatpickr-monthSelect-months {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  min-width: 252px;
+}
+
+.flatpickr-monthSelect-month {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+
+.flatpickr-monthSelect-month:hover {
+  background: var(--color-bg-subtle);
+}
+
+.flatpickr-monthSelect-month.selected {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.flatpickr-monthSelect-month.flatpickr-disabled {
+  color: var(--color-text-faint);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------- Trigger input affordance ---------- */
+/* Every date field in the app is a readonly text input that opens one of
+   these themed calendars on tap, instead of the native OS date UI.
+   (.field itself gets `position: relative` from components.css, which
+   anchors the calendar's static positioning.) */
+input[readonly].input {
+  cursor: pointer;
+}

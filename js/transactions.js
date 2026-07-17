@@ -3,12 +3,14 @@
 
 import { state, generateId, updateCategoriesSet, notify } from "./state.js";
 import { saveToStorage } from "./storage.js";
-import { formatCurrency, formatDate, escapeHtml } from "./utils.js";
+import { formatCurrency, formatDate, escapeHtml, toISODate } from "./utils.js";
 import { mountIconPicker, DEFAULT_ICON } from "./icons.js";
 import { mountCategoryPicker } from "./category-picker.js";
 import { openSheet, confirmDialog } from "./sheet.js";
 import { toast } from "./toast.js";
 import { getBudgetByCategory } from "./budgets.js";
+import { RECURRENCE_OPTIONS, RECURRENCE_LABELS } from "./recurrence.js";
+import { mountDatePicker } from "./datepicker.js";
 
 const filters = { search: "", type: "all", category: "all" };
 
@@ -27,7 +29,9 @@ export function renderTransactionList() {
   });
 
   list.sort((a, b) => {
-    if (a.recurring !== b.recurring) return a.recurring ? -1 : 1;
+    const aRecurring = a.recurrence && a.recurrence !== "none";
+    const bRecurring = b.recurrence && b.recurrence !== "none";
+    if (aRecurring !== bRecurring) return aRecurring ? -1 : 1;
     return new Date(b.date) - new Date(a.date);
   });
 
@@ -51,6 +55,7 @@ export function renderTransactionList() {
 function renderTransactionRow(t) {
   const budget = getBudgetByCategory(t.category);
   const icon = budget?.icon || t.icon || (t.type === "income" ? "ri-arrow-up-circle-line" : "ri-arrow-down-circle-line");
+  const isRecurring = t.recurrence && t.recurrence !== "none";
 
   return `
     <div class="transaction-row ${t.type}">
@@ -59,7 +64,7 @@ function renderTransactionRow(t) {
               style="text-align:left; min-width:0;" ${t.isProjected ? "disabled" : ""}>
         <div class="transaction-category">
           ${escapeHtml(t.category)}
-          ${t.recurring ? '<span class="badge badge-recurring"><i class="ri-repeat-line" aria-hidden="true"></i>Recurring</span>' : ""}
+          ${isRecurring ? `<span class="badge badge-recurring"><i class="ri-repeat-line" aria-hidden="true"></i>${RECURRENCE_LABELS[t.recurrence]}</span>` : ""}
           ${t.isProjected ? '<span class="badge badge-recurring"><i class="ri-time-line" aria-hidden="true"></i>Projected</span>' : ""}
         </div>
         <div class="transaction-meta">${formatDate(t.date)}${t.notes ? ` · ${escapeHtml(t.notes)}` : ""}</div>
@@ -112,6 +117,8 @@ export function openTransactionForm(transactionId = null) {
   const isEdit = !!transaction;
   let type = transaction?.type || "expense";
   let selectedIcon = transaction?.icon || getBudgetByCategory(transaction?.category)?.icon || DEFAULT_ICON;
+  let recurrence = transaction?.recurrence || "none";
+  const initialRecurrence = recurrence;
 
   const form = document.createElement("form");
   form.id = "transactionForm";
@@ -143,8 +150,8 @@ export function openTransactionForm(transactionId = null) {
 
     <div class="field">
       <label class="field-label" for="txDate">Date</label>
-      <input type="date" id="txDate" class="input" required
-             value="${isEdit ? transaction.date : new Date().toISOString().split("T")[0]}">
+      <input type="text" id="txDate" class="input" readonly required
+             value="${isEdit ? transaction.date : toISODate(new Date())}">
     </div>
 
     <div class="field">
@@ -153,21 +160,27 @@ export function openTransactionForm(transactionId = null) {
     </div>
 
     <div class="switch-row">
-      <span class="switch-label"><i class="ri-repeat-line" aria-hidden="true"></i>Repeats monthly</span>
-      <button type="button" id="txRecurring" class="switch${isEdit && transaction.recurring ? " is-on" : ""}"
-              role="switch" aria-checked="${isEdit && transaction.recurring ? "true" : "false"}" aria-label="Repeats monthly"></button>
+      <span class="switch-label"><i class="ri-repeat-line" aria-hidden="true"></i>Repeats</span>
+      <button type="button" id="txRecurrence" class="chip${initialRecurrence !== "none" ? " is-selected" : ""}" data-value="${initialRecurrence}">
+        <i class="ri-repeat-line" aria-hidden="true"></i><span id="txRecurrenceLabel">${RECURRENCE_LABELS[initialRecurrence]}</span>
+      </button>
     </div>
   `;
 
   const { close, body } = openSheet({
     title: isEdit ? "Edit transaction" : "Add transaction",
     content: form,
+    onDismiss: () => datePicker?.destroy(),
     actions: [
       {
         label: isEdit ? "Save changes" : "Add transaction",
         onClick: () => form.requestSubmit && form.requestSubmit(),
       },
     ],
+  });
+
+  const datePicker = mountDatePicker(body.querySelector("#txDate"), {
+    value: isEdit ? transaction.date : toISODate(new Date()),
   });
 
   // Type segmented control
@@ -182,11 +195,14 @@ export function openTransactionForm(transactionId = null) {
     });
   });
 
-  // Recurring switch
-  const recurringSwitch = body.querySelector("#txRecurring");
-  recurringSwitch.addEventListener("click", () => {
-    const isOn = recurringSwitch.classList.toggle("is-on");
-    recurringSwitch.setAttribute("aria-checked", isOn ? "true" : "false");
+  // Recurrence chip — tap to cycle through none -> daily -> weekly -> monthly -> yearly
+  const recurrenceBtn = body.querySelector("#txRecurrence");
+  recurrenceBtn.addEventListener("click", () => {
+    const nextIndex = (RECURRENCE_OPTIONS.indexOf(recurrence) + 1) % RECURRENCE_OPTIONS.length;
+    recurrence = RECURRENCE_OPTIONS[nextIndex];
+    recurrenceBtn.dataset.value = recurrence;
+    recurrenceBtn.classList.toggle("is-selected", recurrence !== "none");
+    body.querySelector("#txRecurrenceLabel").textContent = RECURRENCE_LABELS[recurrence];
   });
 
   // Category + icon pickers
@@ -209,7 +225,7 @@ export function openTransactionForm(transactionId = null) {
       category: categoryPicker.getValue(),
       date: body.querySelector("#txDate").value,
       notes: body.querySelector("#txNotes").value.trim(),
-      recurring: recurringSwitch.classList.contains("is-on"),
+      recurrence,
       icon: selectedIcon,
     };
     const ok = saveTransaction(transactionId, data);
