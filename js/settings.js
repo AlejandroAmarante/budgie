@@ -2,7 +2,13 @@
 // data import/export, and reset.
 
 import { state, notify, updateCategoriesSet } from "./state.js";
-import { saveToStorage, exportJSON, exportCSV, importJSON, resetData } from "./storage.js";
+import {
+  saveToStorage,
+  exportJSON,
+  exportCSV,
+  importJSON,
+  resetData,
+} from "./storage.js";
 import { openSheet, confirmDialog } from "./sheet.js";
 import { toast } from "./toast.js";
 
@@ -16,7 +22,24 @@ const THEMES = [
 
 export function applyAppearance() {
   document.documentElement.setAttribute("data-theme", state.theme);
-  document.documentElement.setAttribute("data-color-scheme", state.darkMode ? "dark" : "light");
+  document.documentElement.setAttribute(
+    "data-color-scheme",
+    state.darkMode ? "dark" : "light",
+  );
+  syncStatusBarColor();
+}
+
+/** Keeps the mobile status bar / notification area in sync with whichever
+ *  theme is active. Android/Chrome picks this up live; iOS doesn't support
+ *  dynamic status bar theming, so it stays a fixed black there instead
+ *  (set once in index.html) rather than looking mismatched. */
+function syncStatusBarColor() {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) return;
+  const bg = getComputedStyle(document.documentElement)
+    .getPropertyValue("--color-bg")
+    .trim();
+  if (bg) meta.setAttribute("content", bg);
 }
 
 export function openSettingsSheet() {
@@ -35,7 +58,7 @@ export function openSettingsSheet() {
           <button type="button" class="theme-swatch${state.theme === t.id ? " is-selected" : ""}" data-theme-id="${t.id}" aria-label="${t.label} theme">
             <span class="theme-swatch-circle" style="background:${t.color}"><i class="ri-check-line" aria-hidden="true"></i></span>
             <span>${t.label}</span>
-          </button>`
+          </button>`,
         ).join("")}
       </div>
     </div>
@@ -75,8 +98,12 @@ export function openSettingsSheet() {
   darkModeRow.addEventListener("click", () => {
     if (state.theme !== "default") return;
     state.darkMode = !state.darkMode;
-    body.querySelector("#darkModeSwitch").classList.toggle("is-on", state.darkMode);
-    body.querySelector("#darkModeSwitch").setAttribute("aria-checked", state.darkMode);
+    body
+      .querySelector("#darkModeSwitch")
+      .classList.toggle("is-on", state.darkMode);
+    body
+      .querySelector("#darkModeSwitch")
+      .setAttribute("aria-checked", state.darkMode);
     applyAppearance();
     saveToStorage();
     notify();
@@ -87,7 +114,9 @@ export function openSettingsSheet() {
       state.theme = btn.dataset.themeId;
       applyAppearance();
       saveToStorage();
-      body.querySelectorAll("#themeGrid .theme-swatch").forEach((b) => b.classList.toggle("is-selected", b === btn));
+      body
+        .querySelectorAll("#themeGrid .theme-swatch")
+        .forEach((b) => b.classList.toggle("is-selected", b === btn));
       darkModeRow.disabled = state.theme !== "default";
       notify();
     });
@@ -103,7 +132,9 @@ export function openSettingsSheet() {
   });
 
   const fileInput = body.querySelector("#importFileInput");
-  body.querySelector("#importBtn").addEventListener("click", () => fileInput.click());
+  body
+    .querySelector("#importBtn")
+    .addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", async () => {
     const file = fileInput.files[0];
     if (!file) return;
@@ -115,14 +146,17 @@ export function openSettingsSheet() {
       toast("Data imported successfully");
     } catch (err) {
       console.error("Import error:", err);
-      toast("Couldn't import that file — check the format and try again", { icon: "ri-error-warning-line" });
+      toast("Couldn't import that file — check the format and try again", {
+        icon: "ri-error-warning-line",
+      });
     }
   });
 
   body.querySelector("#resetDataBtn").addEventListener("click", async () => {
     const confirmed = await confirmDialog({
       title: "Reset all data?",
-      message: "Every transaction and budget will be permanently deleted. This can't be undone.",
+      message:
+        "Every transaction and budget will be permanently deleted. This can't be undone.",
       confirmLabel: "Reset everything",
       danger: true,
     });

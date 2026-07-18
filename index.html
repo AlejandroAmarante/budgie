@@ -3,17 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#2fae60">
+  <meta name="theme-color" content="#faf9f6">
   <meta name="description" content="Budgie — a fast, friendly way to track income, expenses, and budgets.">
+
+  <!-- iOS PWA status bar: iOS doesn't support live theme-color updates, so we
+       use a fixed opaque black bar rather than a mismatched/inconsistent one. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
   <title>Budgie</title>
 
-  <!-- Set theme + color scheme before first paint to avoid a flash -->
+  <!-- Set theme + color scheme + status bar color before first paint to avoid a flash -->
   <script>
     (function () {
+      var BG_BY_THEME = {
+        default: { light: "#faf9f6", dark: "#121310" },
+        pink: { light: "#fff3f7", dark: "#fff3f7" },
+        ocean: { light: "#f0f9fd", dark: "#f0f9fd" },
+        forest: { light: "#f2faf4", dark: "#f2faf4" },
+        sunset: { light: "#fff6ee", dark: "#fff6ee" },
+      };
       try {
         var saved = JSON.parse(localStorage.getItem("budgetAppData") || "{}");
-        document.documentElement.setAttribute("data-theme", saved.theme || "default");
-        document.documentElement.setAttribute("data-color-scheme", saved.darkMode ? "dark" : "light");
+        var theme = saved.theme || "default";
+        var scheme = saved.darkMode ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", theme);
+        document.documentElement.setAttribute("data-color-scheme", scheme);
+        var bg = (BG_BY_THEME[theme] || BG_BY_THEME.default)[scheme];
+        document.querySelector('meta[name="theme-color"]').setAttribute("content", bg);
       } catch (e) {
         document.documentElement.setAttribute("data-theme", "default");
       }
@@ -40,21 +57,6 @@
   <a class="skip-link" href="#mainContent">Skip to content</a>
 
   <div id="app">
-    <header class="app-header">
-      <div class="brand">
-        <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M16 7h.01" />
-          <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
-          <path d="m20 7 2 .5-2 .5" />
-          <path d="M10 18v3" />
-          <path d="M14 17.75V21" />
-          <path d="M7 18a6 6 0 0 0 3.84-10.61" />
-        </svg>
-        Budgie
-      </div>
-    </header>
-
     <nav id="appNav" class="app-nav" aria-label="Primary">
       <div class="nav-brand" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
