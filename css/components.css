@@ -272,7 +272,6 @@
 /* ============ Forms ============ */
 .field {
   margin-bottom: var(--space-5);
-  position: relative;
 }
 
 .field-label {

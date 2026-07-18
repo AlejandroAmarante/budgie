@@ -9,21 +9,35 @@
 
 .flatpickr-calendar {
   background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: var(--space-4);
-  margin-top: var(--space-2);
-  width: auto !important;
+  box-shadow: none;
+  padding: 0 var(--space-4);
+  margin-top: 0;
+  width: 100% !important;
+  box-sizing: border-box;
   font-family: var(--font-body);
+  overflow: hidden;
+  max-height: 0;
   opacity: 0;
-  visibility: hidden;
+  pointer-events: none;
+  transition:
+    max-height var(--duration-base) var(--ease-standard),
+    opacity var(--duration-base) var(--ease-standard),
+    margin-top var(--duration-base) var(--ease-standard),
+    padding var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard);
 }
 
 .flatpickr-calendar.open {
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-4);
+  margin-top: var(--space-2);
+  max-height: 420px;
   opacity: 1;
-  visibility: visible;
-  z-index: 5;
+  pointer-events: auto;
 }
 
 .flatpickr-calendar.arrowTop::before,
@@ -105,7 +119,9 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   flex: 0 0 auto;
-  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
 }
 
 .flatpickr-prev-month:hover,
@@ -123,6 +139,8 @@
 
 /* ---------- Weekday header ---------- */
 .flatpickr-weekdays {
+  display: flex;
+  align-items: center;
   margin-bottom: var(--space-2);
 }
 
@@ -141,8 +159,14 @@
 }
 
 /* ---------- Day grid ---------- */
+.flatpickr-innerContainer,
+.flatpickr-rContainer {
+  width: 100%;
+}
+
 .flatpickr-days {
   display: flex;
+  width: 100%;
 }
 
 .dayContainer {
@@ -150,7 +174,7 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
   width: 100% !important;
-  min-width: 252px !important;
+  min-width: 0 !important;
 }
 
 .flatpickr-day {
@@ -165,7 +189,9 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
 }
 
 .flatpickr-day:hover {
@@ -194,7 +220,9 @@
   background: var(--color-primary-soft);
   color: var(--color-primary-strong);
   border-radius: 0;
-  box-shadow: -5px 0 0 var(--color-primary-soft), 5px 0 0 var(--color-primary-soft);
+  box-shadow:
+    -5px 0 0 var(--color-primary-soft),
+    5px 0 0 var(--color-primary-soft);
 }
 
 .flatpickr-day.startRange {
@@ -230,7 +258,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-2);
-  min-width: 252px;
+  width: 100%;
 }
 
 .flatpickr-monthSelect-month {
@@ -243,7 +271,9 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
 }
 
 .flatpickr-monthSelect-month:hover {
@@ -263,9 +293,10 @@
 
 /* ---------- Trigger input affordance ---------- */
 /* Every date field in the app is a readonly text input that opens one of
-   these themed calendars on tap, instead of the native OS date UI.
-   (.field itself gets `position: relative` from components.css, which
-   anchors the calendar's static positioning.) */
+   these themed calendars on tap, instead of the native OS date UI. The
+   calendar renders in normal document flow (not as a floating overlay),
+   so the sheet naturally grows to fit it while open and shrinks back
+   down the moment it closes. */
 input[readonly].input {
   cursor: pointer;
 }
